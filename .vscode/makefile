@@ -1,10 +1,12 @@
 #source file search paths
-VPATH = ./src 
+VPATH = ./src ../Kmeans/src
 
 	# compiler include search paths
 INCS = -I./include \
 	-I../windex/include \
 	-I../raven-set \
+	-I../Kmeans/src \
+	-I../../code_ext/boost/boost1_78 
 
 LIBS = \
 	-lgdiplus -lgdi32 -lcomdlg32 -lstdc++fs \
@@ -20,7 +22,9 @@ CCflags = -std=c++17 $(OPT) -D_mingw_
 
 # sources
 OBJ_starter = \
-	$(ODIR)/main.o 
+	$(ODIR)/main.o \
+	$(ODIR)/KMeans.o \
+	$(ODIR)/cDataPoint.o \
 
 ### COMPILE
 
@@ -30,7 +34,7 @@ $(ODIR)/%.o: %.cpp
 
 starter: $(OBJ_starter)
 	g++ $(OPT) \
-	-o bin/starter.exe $^  \
+	-o bin/mapify.exe $^  \
 	$(static_link_flags) $(LIBS)
 
 .PHONY: clean
