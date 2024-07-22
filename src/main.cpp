@@ -37,7 +37,7 @@ void cMapify::generateRandom()
 
 void cMapify::readWaypoints(const std::string &fname)
 {
-    myPaperDim = std::make_pair(10000.0, 10000.0);
+    myPaperDim = std::make_pair(6925, 10000);
     std::ifstream ifs( fname );
     if( ! ifs.is_open() )
         throw std::runtime_error("Cannot open waypoints file");
