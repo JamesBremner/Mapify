@@ -1,0 +1,25 @@
+Fits into 24 pages
+Page 1 center 408717, 387346
+Page 2 center 408124, 395029
+Page 3 center 406678, 402590
+Page 4 center 402941, 409922
+Page 5 center 397008, 417884
+Page 6 center 396611, 428260
+Page 7 center 397710, 439206
+Page 8 center 392894, 449714
+Page 9 center 389882, 462941
+Page 10 center 384392, 472401
+Page 11 center 381284, 479853
+Page 12 center 385494, 491929
+Page 13 center 388837, 501047
+Page 14 center 395553, 513128
+Page 15 center 392376, 524629
+Page 16 center 383447, 528404
+Page 17 center 372025, 527258
+Page 18 center 371451, 537599
+Page 19 center 369319, 549945
+Page 20 center 366866, 564228
+Page 21 center 377806, 570967
+Page 22 center 383323, 584205
+Page 23 center 378406, 604760
+Page 24 center 384663, 620238

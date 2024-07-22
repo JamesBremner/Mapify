@@ -37,12 +37,13 @@ void cMapify::generateRandom()
 
 void cMapify::readWaypoints(const std::string &fname)
 {
+    myPaperDim = std::make_pair(10000.0, 10000.0);
     std::ifstream ifs( fname );
     if( ! ifs.is_open() )
         throw std::runtime_error("Cannot open waypoints file");
     std::string line;
     while( getline( ifs,line)) {
-        std::cout << line << "\n";
+        //std::cout << line << "\n";
         int p = line.find(",");
         if( p == -1 )
             throw std::runtime_error("Bad waypoint format");
@@ -86,12 +87,12 @@ void cMapify::cluster()
         for (int c = 0; c < pageCount; c++)
         {
             std::cout << "Page " << c + 1
-                      << " center " << K.clusters()[c].center().d[0] << ", " << K.clusters()[c].center().d[1]
-                      << " waypoints: ";
-            for (auto p : K.clusters()[c].points())
-            {
-                std::cout << p->d[0] << " " << p->d[1] << ", ";
-            }
+                      << " center " << K.clusters()[c].center().d[0] << ", " << K.clusters()[c].center().d[1];
+                    //   << " waypoints: ";
+            // for (auto p : K.clusters()[c].points())
+            // {
+            //     std::cout << p->d[0] << " " << p->d[1] << ", ";
+            // }
             std::cout << "\n";
         }
         break;
@@ -121,8 +122,8 @@ bool cMapify::isMaxPaperDimOK()
             if (y > maxy)
                 maxy = y;
         }
-        std::cout << "Min page size "
-                  << maxx - minx << " " << maxy - miny << "\n";
+        // std::cout << "Min page size "
+        //           << maxx - minx << " " << maxy - miny << "\n";
         if (maxx - minx > myPaperDim.first &&
             maxy - miny > myPaperDim.second)
             return false;
