@@ -18,6 +18,7 @@ class cMapify
 
 public:
     void generateRandom();
+    void readWaypoints(const std::string &fname);
     void cluster();
     bool isMaxPaperDimOK();
     std::string text() const;
@@ -31,6 +32,23 @@ void cMapify::generateRandom()
         myWayPoints.emplace_back(
             rand() % 100,
             rand() % 100);
+    }
+}
+
+void cMapify::readWaypoints(const std::string &fname)
+{
+    std::ifstream ifs( fname );
+    if( ! ifs.is_open() )
+        throw std::runtime_error("Cannot open waypoints file");
+    std::string line;
+    while( getline( ifs,line)) {
+        std::cout << line << "\n";
+        int p = line.find(",");
+        if( p == -1 )
+            throw std::runtime_error("Bad waypoint format");
+        myWayPoints.emplace_back( 
+            atof(line.substr(0,p).c_str()),
+            atof(line.substr(p+1).c_str() ));
     }
 }
 
@@ -60,7 +78,7 @@ void cMapify::cluster()
         }
 
         // Display fit found
-        
+
         std::cout << "\nFits into " << pageCount
                   << " of " << myPaperDim.first << " by " << myPaperDim.second
                   << " pages\n";
@@ -68,7 +86,7 @@ void cMapify::cluster()
         for (int c = 0; c < pageCount; c++)
         {
             std::cout << "Page " << c + 1
-                      << " center " << K.clusters()[c].center().d[0] <<", "<< K.clusters()[c].center().d[1]
+                      << " center " << K.clusters()[c].center().d[0] << ", " << K.clusters()[c].center().d[1]
                       << " waypoints: ";
             for (auto p : K.clusters()[c].points())
             {
@@ -146,7 +164,8 @@ private:
 main()
 {
     cMapify M;
-    M.generateRandom();
+    //M.generateRandom();
+    M.readWaypoints("../dat/test2.txt");
     std::cout << M.text();
     M.cluster();
 
