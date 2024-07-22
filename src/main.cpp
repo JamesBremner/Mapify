@@ -15,14 +15,28 @@ class cMapify
     std::vector<cxy> myWayPoints;
     std::pair<double, double> myPaperDim;
     KMeans K;
+    int myPageCount;
+
+    double myScale, myXoff, myYoff;
+    
 
 public:
+    cMapify();
     void generateRandom();
     void readWaypoints(const std::string &fname);
     void cluster();
     bool isMaxPaperDimOK();
-    std::string text() const;
+
+    void waypointsDisplay(wex::shapes &S);
+    void pageDisplay(wex::shapes &S);
+    std::string text();
 };
+
+cMapify::cMapify()
+: myScale(1.0/50.0),
+myXoff( 380000 ),
+myYoff( 380000 )
+{}
 
 void cMapify::generateRandom()
 {
@@ -38,18 +52,19 @@ void cMapify::generateRandom()
 void cMapify::readWaypoints(const std::string &fname)
 {
     myPaperDim = std::make_pair(6925, 10000);
-    std::ifstream ifs( fname );
-    if( ! ifs.is_open() )
+    std::ifstream ifs(fname);
+    if (!ifs.is_open())
         throw std::runtime_error("Cannot open waypoints file");
     std::string line;
-    while( getline( ifs,line)) {
-        //std::cout << line << "\n";
+    while (getline(ifs, line))
+    {
+        // std::cout << line << "\n";
         int p = line.find(",");
-        if( p == -1 )
+        if (p == -1)
             throw std::runtime_error("Bad waypoint format");
-        myWayPoints.emplace_back( 
-            atof(line.substr(0,p).c_str()),
-            atof(line.substr(p+1).c_str() ));
+        myWayPoints.emplace_back(
+            atof(line.substr(0, p).c_str()),
+            atof(line.substr(p + 1).c_str()));
     }
 }
 
@@ -61,10 +76,10 @@ void cMapify::cluster()
         K.Add({p.x, p.y});
     }
     // increment number of pages until fit found
-    for (int pageCount = 1; pageCount < 100; pageCount++)
+    for (myPageCount = 1; myPageCount < 100; myPageCount++)
     {
         // Init KMeans
-        K.Init(pageCount);
+        K.Init(myPageCount);
 
         // Run KMeans
         K.Iter(10);
@@ -72,7 +87,7 @@ void cMapify::cluster()
         // check that every cluster fits into one page
         if (!isMaxPaperDimOK())
         {
-            std::cout << "Cannot fit into " << pageCount << " pages\n";
+            std::cout << "Cannot fit into " << myPageCount << " pages\n";
 
             // continue to increase number of pages
             continue;
@@ -80,19 +95,19 @@ void cMapify::cluster()
 
         // Display fit found
 
-        std::cout << "\nFits into " << pageCount
+        std::cout << "\nFits into " << myPageCount
                   << " of " << myPaperDim.first << " by " << myPaperDim.second
                   << " pages\n";
 
-        for (int c = 0; c < pageCount; c++)
+        for (int c = 0; c < myPageCount; c++)
         {
             std::cout << "Page " << c + 1
-                      << " center " << K.clusters()[c].center().d[0] << ", " << K.clusters()[c].center().d[1];
-                    //   << " waypoints: ";
-            // for (auto p : K.clusters()[c].points())
-            // {
-            //     std::cout << p->d[0] << " " << p->d[1] << ", ";
-            // }
+                      << " center " << K.clusters()[c].center().d[0] << ", " << K.clusters()[c].center().d[1]
+                      << " " << K.clusters()[c].points().size() << " waypoints:\n ";
+            for (auto p : K.clusters()[c].points())
+            {
+                std::cout << p->d[0] << " " << p->d[1] << ", ";
+            }
             std::cout << "\n";
         }
         break;
@@ -132,14 +147,51 @@ bool cMapify::isMaxPaperDimOK()
     return true;
 }
 
-std::string cMapify::text() const
+std::string cMapify::text()
 {
     std::stringstream ss;
-    ss << "Waypoints: ";
-    for (auto &p : myWayPoints)
-        ss << p.x << " " << p.y << ", ";
-    ss << "\n";
+
+    // ss << "Waypoints: ";
+    // for (auto &p : myWayPoints)
+    //     ss << p.x << " " << p.y << ", ";
+    // ss << "\n";
+
+    ss << myPageCount << " pages of " << myPaperDim.first << " by " << myPaperDim.second << "\r\n";
+
+    for (int c = 0; c < myPageCount; c++)
+    {
+        ss << "Page " << c + 1
+           << " center " << K.clusters()[c].center().d[0] << ", " << K.clusters()[c].center().d[1]
+           << " " << K.clusters()[c].points().size() << " waypoints:\n ";
+        // for (auto p : K.clusters()[c].points())
+        // {
+        //     std::cout << p->d[0] << " " << p->d[1] << ", ";
+        // }
+        ss << "\r\n";
+    }
     return ss.str();
+}
+
+void cMapify::waypointsDisplay(wex::shapes &S)
+{
+    S.color(0x0000FF);
+    for (auto &p : myWayPoints)
+        S.pixel(
+            myScale * (p.x - myXoff),
+             myScale * (p.y - myYoff));
+
+}
+void cMapify::pageDisplay(wex::shapes &S)
+{
+    S.color(0);
+
+    int w = myScale * (myPaperDim.first);
+    int h = myScale * (myPaperDim.second);
+    for (int c = 0; c < myPageCount; c++)
+        S.rectangle(
+            {(int)(myScale * (K.clusters()[c].center().d[0] - myXoff)-w/2),
+             (int)(myScale * (K.clusters()[c].center().d[1] - myYoff)-h/2),
+             w, h});
 }
 
 class cGUI : public cStarterGUI
@@ -147,29 +199,38 @@ class cGUI : public cStarterGUI
 public:
     cGUI()
         : cStarterGUI(
-              "Starter",
-              {50, 50, 1000, 500}),
-          lb(wex::maker::make<wex::label>(fm))
+              "Mapify",
+              {50, 50, 1000, 1000}),
+          myText(wex::maker::make<wex::multiline>(fm))
     {
-        lb.move(50, 50, 100, 30);
-        lb.text("Hello World");
+        M.readWaypoints("../dat/test2-0to2000.txt");
+
+        M.cluster();
+
+        myText.move(50, 50, 200, 200);
+        myText.text(M.text());
+
+        fm.events().draw(
+            [&](PAINTSTRUCT &ps)
+            {
+                wex::shapes S(ps);
+                M.waypointsDisplay(S);
+                M.pageDisplay(S);
+            });
 
         show();
         run();
     }
 
 private:
-    wex::label &lb;
+    cMapify M;
+
+    wex::multiline myText;
 };
 
 main()
 {
-    cMapify M;
-    //M.generateRandom();
-    M.readWaypoints("../dat/test2.txt");
-    std::cout << M.text();
-    M.cluster();
 
-    // cGUI theGUI;
+    cGUI theGUI;
     return 0;
 }
