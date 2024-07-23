@@ -1,5 +1,7 @@
 # Mapify
 
+## Problem Statement
+
 I do the occasional long distance hike and often require printing 10+ A3 maps.
 
 I'm trying to find an algorithmic solution to the manual process of printing off multiple maps of a route.
@@ -12,4 +14,21 @@ Id really appreciate a push in the right direction. Is there a simple solution o
 
 To clarify: Given a list of 2d points, find the minimum amount of boxes they will fit in. With the boxes being either wh (portrait) or hw (landscape). Also the maps cannot be rescaled.
 
-https://stackoverflow.com/q/78576265/16582
+## Algorithm
+
+```
+- FOR pageCount = 1 to 100
+  - Apply K-Means algo to waypoints to find pageCount clusters
+  - Create page centred on center of each cluster
+  - If all waypoints on at least one page
+      - DONE
+  - If missed waypoints count < some specified % of total waypoints
+       - FOR missedPageCount = 1 to 100
+           - Apply K-Means algo to missed waypoints to find missedPageCount clusters
+           - Create page on center of each missed cluster
+           - If all waypoints on at least one page
+                - DONE
+       - ENDLOOP over missedPageCount
+- ENDLOOP over pageCount
+- FAILED
+```
