@@ -32,3 +32,12 @@ To clarify: Given a list of 2d points, find the minimum amount of boxes they wil
 - ENDLOOP over pageCount
 - FAILED
 ```
+
+## GUI
+
+The GUI displays the waypoints ( red ) and the page locations ( black ).
+
+To zoom in or out, use the mouse wheel.
+
+To pan, right click and select for pupup menu
+
