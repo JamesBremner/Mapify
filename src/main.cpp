@@ -28,11 +28,20 @@ public:
     void pageDisplay(wex::shapes &S);
     std::string text();
 
+    void incScale()
+    {
+        myScale *= 1.2;
+    }
+    void decScale()
+    {
+        myScale *= 0.8;
+    }
+
 private:
     bool isMaxPaperDimOK();
     std::vector<cxy> missedWaypoints();
-    void clusterMissed(const std::vector<cxy>& missed);
-    bool isMaxPaperDimOKPass2(std::vector<cxy>& pagesForMissed);
+    void clusterMissed(const std::vector<cxy> &missed);
+    bool isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed);
 };
 
 cMapify::cMapify()
@@ -167,16 +176,16 @@ bool cMapify::isMaxPaperDimOK()
         std::cout << "oversized " << countOversizedClusters
                   << " missed points " << missed.size()
                   << "\n";
-        
+
         // add pages to cover the missed waypoints
-        clusterMissed( missed );
+        clusterMissed(missed);
 
         return true;
     }
 
     return false;
 }
-void cMapify::clusterMissed( const std::vector<cxy>& missed )
+void cMapify::clusterMissed(const std::vector<cxy> &missed)
 {
     // missing waypoints to KMeans class instance K
     K.clearData();
@@ -208,12 +217,12 @@ void cMapify::clusterMissed( const std::vector<cxy>& missed )
         // add extra pages to cover missed waypoints
         myPageCenters.insert(
             myPageCenters.end(),
-            pagesForMissed.begin(),pagesForMissed.end()        );
+            pagesForMissed.begin(), pagesForMissed.end());
 
         return;
     }
 }
-bool cMapify::isMaxPaperDimOKPass2(std::vector<cxy>& pagesForMissed )
+bool cMapify::isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed)
 {
     double minx, miny, maxx, maxy, clusterWidth, clusterHeight;
 
@@ -366,7 +375,7 @@ public:
               {50, 50, 1000, 1000}),
           myText(wex::maker::make<wex::multiline>(fm))
     {
-        //M.readWaypoints("../dat/test2-0to2000.txt");
+        // M.readWaypoints("../dat/test2-0to2000.txt");
         M.readWaypoints("../dat/test2.txt");
 
         M.cluster();
@@ -382,11 +391,16 @@ public:
                 M.pageDisplay(S);
             });
 
-        //         fm.events().onMouseWheel(int dist )
-        //         {}
-        // {
-        //     clicked = 1;
-        // });
+        // handle mouse wheel
+    fm.events().mouseWheel(
+        [&](int dist)
+        {
+            if (dist > 0)
+                M.incScale();
+            else
+                M.decScale();
+            fm.update();
+        });
 
         show();
         run();
