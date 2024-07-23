@@ -36,6 +36,22 @@ public:
     {
         myScale *= 0.8;
     }
+    void panUp()
+    {
+        myYoff -= 0.1 * myYoff;
+    }
+    void panDown()
+    {
+        myYoff += 0.1 * myYoff;
+    }
+    void panLeft()
+    {
+        myXoff -= 0.1 * myXoff;
+    }
+    void panRight()
+    {
+        myXoff += 0.1 * myXoff;
+    }
 
 private:
     bool isMaxPaperDimOK();
@@ -392,15 +408,47 @@ public:
             });
 
         // handle mouse wheel
-    fm.events().mouseWheel(
-        [&](int dist)
-        {
-            if (dist > 0)
-                M.incScale();
-            else
-                M.decScale();
-            fm.update();
-        });
+        fm.events().mouseWheel(
+            [&](int dist)
+            {
+                if (dist > 0)
+                    M.incScale();
+                else
+                    M.decScale();
+                fm.update();
+            });
+
+        fm.events().clickRight(
+            [&]
+            {
+                wex::menu m(fm);
+                m.append("Pan left",
+                         [&](const std::string &title)
+                         {
+                             M.panLeft();
+                             fm.update();
+                         });
+                m.append("Pan right",
+                         [&](const std::string &title)
+                         {
+                             M.panRight();
+                             fm.update();
+                         });
+                m.append("Pan up",
+                         [&](const std::string &title)
+                         {
+                             M.panUp();
+                             fm.update();
+                         });
+                m.append("Pan down",
+                         [&](const std::string &title)
+                         {
+                             M.panDown();
+                             fm.update();
+                         });
+                auto ms = fm.getMouseStatus();
+                m.popup(ms.x, ms.y);
+            });
 
         show();
         run();
