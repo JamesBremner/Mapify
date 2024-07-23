@@ -1,5 +1,5 @@
 #source file search paths
-VPATH = ./src ../Kmeans/src
+VPATH = ./src ../Kmeans/src ../raven-set
 
 	# compiler include search paths
 INCS = -I./include \
@@ -17,7 +17,7 @@ static_link_flags = -static-libstdc++ -static-libgcc -static -lComctl32
 # folders
 ODIR = ./.vscode/obj
 
-OPT = -g
+OPT = -O2
 CCflags = -std=c++17 $(OPT) -D_mingw_
 
 # sources
@@ -25,6 +25,7 @@ OBJ_starter = \
 	$(ODIR)/main.o \
 	$(ODIR)/KMeans.o \
 	$(ODIR)/cDataPoint.o \
+	$(ODIR)/cxy.o \
 
 ### COMPILE
 
