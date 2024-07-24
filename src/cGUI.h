@@ -70,7 +70,6 @@ public:
 private:
     cMapify M;
 
-    wex::multiline myText;
-
     void constructMenus();
+    void registerEventHandlers();
 };

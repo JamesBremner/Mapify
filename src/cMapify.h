@@ -34,12 +34,30 @@ public:
     {
         myXoff -= 0.1 * myXoff;
     }
+    void DisplayViz()
+    {
+        myDisplayTab = eDisplayTab::viz;
+    }
+    void DisplayPages()
+    {
+        myDisplayTab = eDisplayTab::page;
+    }
+    bool isDisplayPages() const
+    {
+        return myDisplayTab == eDisplayTab::page;
+    }
 
 private:
     std::vector<cxy> myWayPoints;
     std::pair<double, double> myPaperDim;
     KMeans K;
     std::vector<cxy> myPageCenters;
+    enum class eDisplayTab
+    {
+        viz,
+        page
+    };
+    eDisplayTab myDisplayTab;
 
     double myScale, myXoff, myYoff;
     bool isMaxPaperDimOK();

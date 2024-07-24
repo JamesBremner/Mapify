@@ -12,12 +12,11 @@
 #include "cMapify.h"
 #include "cGUI.h"
 
-
-
 cMapify::cMapify()
     : myScale(1.0 / 200.0),
       myXoff(350000),
-      myYoff(380000)
+      myYoff(380000),
+      myDisplayTab(eDisplayTab::viz)
 {
 }
 
@@ -54,8 +53,8 @@ void cMapify::readWaypoints(const std::string &fname)
 
 void cMapify::cluster()
 {
-    if( ! myWayPoints.size() )
-    return;
+    if (!myWayPoints.size())
+        return;
 
     K.clearData();
     myPageCenters.clear();
@@ -298,7 +297,7 @@ std::vector<cxy> cMapify::missedWaypoints()
 
 std::string cMapify::text()
 {
-    if( ! myPageCenters.size() )
+    if (!myPageCenters.size())
         return "";
 
     std::stringstream ss;
@@ -310,23 +309,19 @@ std::string cMapify::text()
 
     ss << myPageCenters.size() << " pages of " << myPaperDim.first << " by " << myPaperDim.second << "\r\n";
 
-    // for (int c = 0; c < myPageCount; c++)
-    int c = 0;
+    for (int c = 0; c < myPageCenters.size(); c++)
     {
         ss << "Page " << c + 1
            << " center " << myPageCenters[c].x << ", " << myPageCenters[c].y
-           << " " << K.clusters()[c].points().size() << " waypoints:\r\n ";
-        for (auto p : K.clusters()[c].points())
-        {
-            std::cout << p->d[0] << " " << p->d[1] << ", ";
-        }
-        ss << "\r\n";
+           << " " << K.clusters()[c].points().size() << "\r\n";
     }
     return ss.str();
 }
 
 void cMapify::waypointsDisplay(wex::shapes &S)
 {
+    if (myDisplayTab != eDisplayTab::viz)
+        return;
     S.color(0x0000FF);
     for (auto &p : myWayPoints)
         S.pixel(
@@ -337,45 +332,29 @@ void cMapify::pageDisplay(wex::shapes &S)
 {
     S.color(0);
 
-    int w = myScale * (myPaperDim.first);
-    int h = myScale * (myPaperDim.second);
-    for (int c = 0; c < myPageCenters.size(); c++)
-        S.rectangle(
-            {(int)(myScale * (myPageCenters[c].x - myXoff) - w / 2),
-             (int)(myScale * (myPageCenters[c].y - myYoff) - h / 2),
-             w, h});
+    if (myDisplayTab == eDisplayTab::viz)
+    {
+        int w = myScale * (myPaperDim.first);
+        int h = myScale * (myPaperDim.second);
+        for (int c = 0; c < myPageCenters.size(); c++)
+            S.rectangle(
+                {(int)(myScale * (myPageCenters[c].x - myXoff) - w / 2),
+                 (int)(myScale * (myPageCenters[c].y - myYoff) - h / 2),
+                 w, h});
+    }
+    else
+    {
+        S.text(text(), {10, 10, 1000, 1000});
+    }
 }
 
 cGUI::cGUI()
     : cStarterGUI(
           "Mapify",
-          {50, 50, 1000, 1000}),
-      myText(wex::maker::make<wex::multiline>(fm))
+          {50, 50, 1000, 1000})
 {
-
-    myText.move(400, 50, 200, 200);
-    
     constructMenus();
-
-    fm.events().draw(
-        [&](PAINTSTRUCT &ps)
-        {
-            wex::shapes S(ps);
-            M.waypointsDisplay(S);
-            M.pageDisplay(S);
-        });
-
-    // handle mouse wheel
-    fm.events().mouseWheel(
-        [&](int dist)
-        {
-            if (dist > 0)
-                M.incScale();
-            else
-                M.decScale();
-            fm.update();
-        });
-
+    registerEventHandlers();
     show();
     run();
 }
@@ -395,12 +374,28 @@ void cGUI::constructMenus()
                          return;
                      M.readWaypoints(fname);
                      M.cluster();
-                     myText.text(M.text());
                      fm.update();
                  });
     mbar.append("File", mfile);
 
-    wex::menu mdisplay(fm);
+    static wex::menu mdisplay(fm);
+    mdisplay.append("Visualization",
+                    [&](const std::string &title)
+                    {
+                        M.DisplayViz();
+                        mdisplay.check(0);
+                        mdisplay.check(1, false);
+                        fm.update();
+                    });
+    mdisplay.append("Page Locations",
+                    [&](const std::string &title)
+                    {
+                        M.DisplayPages();
+                        mdisplay.check(0, false);
+                        mdisplay.check(1);
+                        fm.update();
+                    });
+    mdisplay.appendSeparator();
     mdisplay.append("Pan left",
                     [&](const std::string &title)
                     {
@@ -425,7 +420,28 @@ void cGUI::constructMenus()
                         M.panDown();
                         fm.update();
                     });
+    mdisplay.check(0);
     mbar.append("Display", mdisplay);
+}
+void cGUI::registerEventHandlers() {
+    fm.events().draw(
+        [&](PAINTSTRUCT &ps)
+        {
+            wex::shapes S(ps);
+            M.waypointsDisplay(S);
+            M.pageDisplay(S);
+        });
+
+    // handle mouse wheel
+    fm.events().mouseWheel(
+        [&](int dist)
+        {
+            if (dist > 0)
+                M.incScale();
+            else
+                M.decScale();
+            fm.update();
+        });
 }
 
 main()
