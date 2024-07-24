@@ -61,3 +61,16 @@ public:
 protected:
     wex::gui &fm;
 };
+
+class cGUI : public cStarterGUI
+{
+public:
+    cGUI();
+
+private:
+    cMapify M;
+
+    wex::multiline myText;
+
+    void constructMenus();
+};

@@ -4,74 +4,15 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <wex.h>
-#include "cStarterGUI.h"
 
+#include <wex.h>
 #include "cxy.h"
 #include "KMeans.h"
 
-class cMapify
-{
+#include "cMapify.h"
+#include "cGUI.h"
 
-public:
-    cMapify();
-    void generateRandom();
-    void readWaypoints(const std::string &fname);
-    void cluster();
-    void waypointsDisplay(wex::shapes &S);
-    void pageDisplay(wex::shapes &S);
-    std::string text();
 
-    void incScale()
-    {
-        myScale *= 1.2;
-    }
-    void decScale()
-    {
-        myScale *= 0.8;
-    }
-    void panUp()
-    {
-        myYoff += 0.1 * myYoff;
-    }
-    void panDown()
-    {
-        myYoff -= 0.1 * myYoff;
-    }
-    void panLeft()
-    {
-        myXoff += 0.1 * myXoff;
-    }
-    void panRight()
-    {
-        myXoff -= 0.1 * myXoff;
-    }
-
-private:
-    std::vector<cxy> myWayPoints;
-    std::pair<double, double> myPaperDim;
-    KMeans K;
-    std::vector<cxy> myPageCenters;
-
-    double myScale, myXoff, myYoff;
-    bool isMaxPaperDimOK();
-    std::vector<cxy> missedWaypoints();
-    void clusterMissed(const std::vector<cxy> &missed);
-    bool isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed);
-};
-
-class cGUI : public cStarterGUI
-{
-public:
-    cGUI();
-
-private:
-    cMapify M;
-
-    wex::multiline myText;
-
-    void constructMenus();
-};
 
 cMapify::cMapify()
     : myScale(1.0 / 200.0),

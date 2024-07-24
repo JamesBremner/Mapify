@@ -1,7 +1,7 @@
 #source file search paths
 VPATH = ./src ../Kmeans/src ../raven-set
 
-	# compiler include search paths
+# compiler include search paths
 INCS = -I./include \
 	-I../windex/include \
 	-I../raven-set \
