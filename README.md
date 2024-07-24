@@ -39,9 +39,13 @@ To clarify: Given a list of 2d points, find the minimum amount of boxes they wil
 
 ## GUI
 
-The GUI displays the waypoints ( red ) and the page locations ( black ).
+To read a waypoint file select from menu File
 
-To zoom in or out, use the mouse wheel.
+To display a vizualization of the waypoints ( red dots ) and the page locations ( black rectangles ) select from menu Display
 
-To pan, right click and select for pupup menu
+To display page locations ( x,y ) select from menu Display
+
+To zoom vizualization in or out, use the mouse wheel.
+
+To pan vizualization, select from menu Display
 
