@@ -1,5 +1,9 @@
 # Mapify
 
+![image](https://github.com/user-attachments/assets/49e8b937-73e0-452c-9b5e-874a2870f35e)<br>
+Photo: @peaklass1
+
+
 ## Problem Statement
 
 I do the occasional long distance hike and often require printing 10+ A3 maps.
