@@ -38,19 +38,19 @@ public:
     }
     void panUp()
     {
-        myYoff -= 0.1 * myYoff;
+        myYoff += 0.1 * myYoff;
     }
     void panDown()
     {
-        myYoff += 0.1 * myYoff;
+        myYoff -= 0.1 * myYoff;
     }
     void panLeft()
     {
-        myXoff -= 0.1 * myXoff;
+        myXoff += 0.1 * myXoff;
     }
     void panRight()
     {
-        myXoff += 0.1 * myXoff;
+        myXoff -= 0.1 * myXoff;
     }
 
 private:
@@ -58,6 +58,20 @@ private:
     std::vector<cxy> missedWaypoints();
     void clusterMissed(const std::vector<cxy> &missed);
     bool isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed);
+};
+
+class cGUI : public cStarterGUI
+{
+public:
+    
+    cGUI();
+
+private:
+    cMapify M;
+
+    wex::multiline myText;
+
+    void  constructMenus();
 };
 
 cMapify::cMapify()
@@ -382,22 +396,23 @@ void cMapify::pageDisplay(wex::shapes &S)
              w, h});
 }
 
-class cGUI : public cStarterGUI
-{
-public:
-    cGUI()
+
+
+cGUI::cGUI()
         : cStarterGUI(
               "Mapify",
               {50, 50, 1000, 1000}),
           myText(wex::maker::make<wex::multiline>(fm))
     {
-        // M.readWaypoints("../dat/test2-0to2000.txt");
-        M.readWaypoints("../dat/test2.txt");
+         M.readWaypoints("../dat/test2-0to2000.txt");
+        //M.readWaypoints("../dat/test2.txt");
 
         M.cluster();
 
         myText.move(400, 50, 200, 200);
         myText.text(M.text());
+
+        constructMenus();
 
         fm.events().draw(
             [&](PAINTSTRUCT &ps)
@@ -418,47 +433,41 @@ public:
                 fm.update();
             });
 
-        fm.events().clickRight(
-            [&]
-            {
-                wex::menu m(fm);
-                m.append("Pan left",
-                         [&](const std::string &title)
-                         {
-                             M.panLeft();
-                             fm.update();
-                         });
-                m.append("Pan right",
-                         [&](const std::string &title)
-                         {
-                             M.panRight();
-                             fm.update();
-                         });
-                m.append("Pan up",
-                         [&](const std::string &title)
-                         {
-                             M.panUp();
-                             fm.update();
-                         });
-                m.append("Pan down",
-                         [&](const std::string &title)
-                         {
-                             M.panDown();
-                             fm.update();
-                         });
-                auto ms = fm.getMouseStatus();
-                m.popup(ms.x, ms.y);
-            });
-
         show();
         run();
     }
 
-private:
-    cMapify M;
-
-    wex::multiline myText;
-};
+void cGUI::constructMenus() {
+        wex::menubar mbar(fm);
+        wex::menu mfile(fm);
+        mbar.append("File", mfile);
+        wex::menu mdisplay(fm);
+        mdisplay.append("Pan left",
+                        [&](const std::string &title)
+                        {
+                            M.panLeft();
+                            fm.update();
+                        });
+        mdisplay.append("Pan right",
+                        [&](const std::string &title)
+                        {
+                            M.panRight();
+                            fm.update();
+                        });
+        mdisplay.append("Pan up",
+                        [&](const std::string &title)
+                        {
+                            M.panUp();
+                            fm.update();
+                        });
+        mdisplay.append("Pan down",
+                        [&](const std::string &title)
+                        {
+                            M.panDown();
+                            fm.update();
+                        });
+        mbar.append("Display", mdisplay);
+}
 
 main()
 {
