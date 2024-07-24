@@ -12,12 +12,6 @@
 
 class cMapify
 {
-    std::vector<cxy> myWayPoints;
-    std::pair<double, double> myPaperDim;
-    KMeans K;
-    std::vector<cxy> myPageCenters;
-
-    double myScale, myXoff, myYoff;
 
 public:
     cMapify();
@@ -54,6 +48,12 @@ public:
     }
 
 private:
+    std::vector<cxy> myWayPoints;
+    std::pair<double, double> myPaperDim;
+    KMeans K;
+    std::vector<cxy> myPageCenters;
+
+    double myScale, myXoff, myYoff;
     bool isMaxPaperDimOK();
     std::vector<cxy> missedWaypoints();
     void clusterMissed(const std::vector<cxy> &missed);
@@ -63,7 +63,6 @@ private:
 class cGUI : public cStarterGUI
 {
 public:
-    
     cGUI();
 
 private:
@@ -71,7 +70,7 @@ private:
 
     wex::multiline myText;
 
-    void  constructMenus();
+    void constructMenus();
 };
 
 cMapify::cMapify()
@@ -94,6 +93,7 @@ void cMapify::generateRandom()
 
 void cMapify::readWaypoints(const std::string &fname)
 {
+    myWayPoints.clear();
     myPaperDim = std::make_pair(6925, 10000);
     std::ifstream ifs(fname);
     if (!ifs.is_open())
@@ -113,6 +113,12 @@ void cMapify::readWaypoints(const std::string &fname)
 
 void cMapify::cluster()
 {
+    if( ! myWayPoints.size() )
+    return;
+
+    K.clearData();
+    myPageCenters.clear();
+
     // add waypoints to KMeans class instance K
     for (auto &p : myWayPoints)
     {
@@ -351,6 +357,9 @@ std::vector<cxy> cMapify::missedWaypoints()
 
 std::string cMapify::text()
 {
+    if( ! myPageCenters.size() )
+        return "";
+
     std::stringstream ss;
 
     // ss << "Waypoints: ";
@@ -396,77 +405,86 @@ void cMapify::pageDisplay(wex::shapes &S)
              w, h});
 }
 
-
-
 cGUI::cGUI()
-        : cStarterGUI(
-              "Mapify",
-              {50, 50, 1000, 1000}),
-          myText(wex::maker::make<wex::multiline>(fm))
-    {
-         M.readWaypoints("../dat/test2-0to2000.txt");
-        //M.readWaypoints("../dat/test2.txt");
+    : cStarterGUI(
+          "Mapify",
+          {50, 50, 1000, 1000}),
+      myText(wex::maker::make<wex::multiline>(fm))
+{
 
-        M.cluster();
+    myText.move(400, 50, 200, 200);
+    
+    constructMenus();
 
-        myText.move(400, 50, 200, 200);
-        myText.text(M.text());
+    fm.events().draw(
+        [&](PAINTSTRUCT &ps)
+        {
+            wex::shapes S(ps);
+            M.waypointsDisplay(S);
+            M.pageDisplay(S);
+        });
 
-        constructMenus();
+    // handle mouse wheel
+    fm.events().mouseWheel(
+        [&](int dist)
+        {
+            if (dist > 0)
+                M.incScale();
+            else
+                M.decScale();
+            fm.update();
+        });
 
-        fm.events().draw(
-            [&](PAINTSTRUCT &ps)
-            {
-                wex::shapes S(ps);
-                M.waypointsDisplay(S);
-                M.pageDisplay(S);
-            });
+    show();
+    run();
+}
 
-        // handle mouse wheel
-        fm.events().mouseWheel(
-            [&](int dist)
-            {
-                if (dist > 0)
-                    M.incScale();
-                else
-                    M.decScale();
-                fm.update();
-            });
+void cGUI::constructMenus()
+{
 
-        show();
-        run();
-    }
+    wex::menubar mbar(fm);
 
-void cGUI::constructMenus() {
-        wex::menubar mbar(fm);
-        wex::menu mfile(fm);
-        mbar.append("File", mfile);
-        wex::menu mdisplay(fm);
-        mdisplay.append("Pan left",
-                        [&](const std::string &title)
-                        {
-                            M.panLeft();
-                            fm.update();
-                        });
-        mdisplay.append("Pan right",
-                        [&](const std::string &title)
-                        {
-                            M.panRight();
-                            fm.update();
-                        });
-        mdisplay.append("Pan up",
-                        [&](const std::string &title)
-                        {
-                            M.panUp();
-                            fm.update();
-                        });
-        mdisplay.append("Pan down",
-                        [&](const std::string &title)
-                        {
-                            M.panDown();
-                            fm.update();
-                        });
-        mbar.append("Display", mdisplay);
+    wex::menu mfile(fm);
+    mfile.append("Read Waypoint file",
+                 [&](const std::string &title)
+                 {
+                     wex::filebox fb(fm);
+                     auto fname = fb.open();
+                     if (fname.empty())
+                         return;
+                     M.readWaypoints(fname);
+                     M.cluster();
+                     myText.text(M.text());
+                     fm.update();
+                 });
+    mbar.append("File", mfile);
+
+    wex::menu mdisplay(fm);
+    mdisplay.append("Pan left",
+                    [&](const std::string &title)
+                    {
+                        M.panLeft();
+                        fm.update();
+                    });
+    mdisplay.append("Pan right",
+                    [&](const std::string &title)
+                    {
+                        M.panRight();
+                        fm.update();
+                    });
+    mdisplay.append("Pan up",
+                    [&](const std::string &title)
+                    {
+                        M.panUp();
+                        fm.update();
+                    });
+    mdisplay.append("Pan down",
+                    [&](const std::string &title)
+                    {
+                        M.panDown();
+                        fm.update();
+                    });
+    mbar.append("Display", mdisplay);
 }
 
 main()
