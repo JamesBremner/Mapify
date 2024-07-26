@@ -1,3 +1,5 @@
+#pragma once
+
 class cMapify
 {
 
@@ -5,7 +7,7 @@ public:
     cMapify();
     void generateRandom();
     void readWaypoints(const std::string &fname);
-    void cluster();
+    void calculate();
     void waypointsDisplay(wex::shapes &S);
     void pageDisplay(wex::shapes &S);
     std::string text();
@@ -46,6 +48,14 @@ public:
     {
         return myDisplayTab == eDisplayTab::page;
     }
+    void algoCluster()
+    {
+        myAlgorithm = eAlgorithm::cluster;
+    }
+    void algoGreedy()
+    {
+        myAlgorithm = eAlgorithm::greedy;
+    }
 
 private:
     std::vector<cxy> myWayPoints;
@@ -58,10 +68,31 @@ private:
         page
     };
     eDisplayTab myDisplayTab;
+    enum class eAlgorithm
+    {
+        cluster,
+        greedy
+    };
+    eAlgorithm myAlgorithm;
 
     double myScale, myXoff, myYoff;
+
+    void cluster();
+    void greedy();
     bool isMaxPaperDimOK();
     std::vector<cxy> missedWaypoints();
     void clusterMissed(const std::vector<cxy> &missed);
     bool isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed);
+    int NewPointsInPage(
+        const cxy &page,
+        const std::vector<bool> &covered,
+        std::vector<int> &added,
+        int &last);
+    cxy bestPageLocation(
+        const cxy &wpFirstInPage,
+        const std::vector<cxy>& voff,
+        std::vector<bool> &covered,
+        int &bestlast,
+        std::vector<int>& bestadded);
+    std::vector<cxy> pageOffsets();
 };

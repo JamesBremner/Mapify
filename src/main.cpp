@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <limits>
 
 #include <wex.h>
 #include "cxy.h"
@@ -16,7 +17,8 @@ cMapify::cMapify()
     : myScale(1.0 / 200.0),
       myXoff(350000),
       myYoff(380000),
-      myDisplayTab(eDisplayTab::viz)
+      myDisplayTab(eDisplayTab::viz),
+      myAlgorithm(eAlgorithm::cluster)
 {
 }
 
@@ -49,6 +51,182 @@ void cMapify::readWaypoints(const std::string &fname)
             atof(line.substr(0, p).c_str()),
             atof(line.substr(p + 1).c_str()));
     }
+}
+
+void cMapify::calculate()
+{
+    switch (myAlgorithm)
+    {
+    case eAlgorithm::cluster:
+        cluster();
+        break;
+    case eAlgorithm::greedy:
+        greedy();
+        break;
+    }
+}
+void cMapify::greedy()
+{
+    if (!myWayPoints.size())
+        return;
+
+    myPageCenters.clear();
+
+    std::vector<bool> covered(myWayPoints.size(), false);
+
+    // calc offsets from waypoint to paper center
+    // to position the paper so the waypoint is on margin
+
+    auto voff = pageOffsets();
+
+    auto &wpFirstInPage = myWayPoints[0];
+
+    cxy bestpage;
+    int bestlast;
+    std::vector<int> bestadded;
+    for (int p = 0;; p++)
+    {
+
+        bestpage = bestPageLocation(
+            wpFirstInPage,
+            voff,
+            covered,
+            bestlast,
+            bestadded);
+
+        // check if last waypoint has been included
+        if (bestlast == myWayPoints.size() - 1)
+        {
+            myPageCenters.push_back(bestpage);
+            covered.insert(
+                covered.end(),
+                bestadded.begin(), bestadded.end());
+
+            // add pages to cover missed waypoints
+            // clusterMissed(missedWaypoints());
+            // missedWaypoints();
+
+            return;
+        }
+
+        if (p > 300)
+            return;
+
+        if (!myPageCenters.size())
+        {
+            // always add first page
+            myPageCenters.push_back(bestpage);
+            covered.insert(
+                covered.end(),
+                bestadded.begin(), bestadded.end());
+        }
+        else
+        {
+            // add page if different enough from previous
+            if (myPageCenters.back().dist2(bestpage) > 5)
+            {
+                myPageCenters.push_back(bestpage);
+                covered.insert(
+                    covered.end(),
+                    bestadded.begin(), bestadded.end());
+                std::cout << " add\n";
+            }
+            else {
+                std::cout << " skip ";
+            }
+
+            wpFirstInPage = myWayPoints[bestlast + 1];
+        }
+    }
+}
+
+std::vector<cxy> cMapify::pageOffsets()
+{
+    std::vector<cxy> voff;
+    
+    double top = myPaperDim.second / 2;
+    double bottom = -top;
+    double left = myPaperDim.first / 2;
+    double right = -left;
+
+    voff.emplace_back(left,top);
+    voff.emplace_back(0,top);
+    voff.emplace_back(right,top);
+
+    voff.emplace_back(right,0);
+    voff.emplace_back(right,bottom);
+
+    // voff.emplace_back(0,bottom);
+    // voff.emplace_back(left,bottom);
+
+    // voff.emplace_back(left,0);
+
+    return voff;
+}
+
+cxy cMapify::bestPageLocation(
+    const cxy &wpFirstInPage,
+    const std::vector<cxy>& voff,
+    std::vector<bool> &covered,
+    int &bestlast,
+    std::vector<int> &bestadded)
+{
+    cxy page, bestpage;
+    int c, cmax = 0;
+    int last;
+    std::vector<int> added;
+    for (const cxy &off : voff)
+    {
+        page.x = wpFirstInPage.x + off.x;
+        page.y = wpFirstInPage.y + off.y;
+        c = NewPointsInPage(page, covered, added, last);
+        // std::cout << page.x <<" "<< page.y <<" "<< c <<" "<< last
+        //     << "\n";
+        if (c > cmax)
+        {
+            cmax = c;
+            bestpage = page;
+            bestlast = last;
+            bestadded = added;
+        }
+    }
+
+    // std::cout << "last " << bestlast << "\n";
+
+    return bestpage;
+}
+
+int cMapify::NewPointsInPage(
+    const cxy &page,
+    const std::vector<bool> &covered,
+    std::vector<int> &added,
+    int &last)
+{
+    std::vector<cxy> poly;
+    poly.emplace_back(
+        page.x - myPaperDim.first / 2,
+        page.y - myPaperDim.second / 2);
+    poly.emplace_back(
+        page.x + myPaperDim.first / 2,
+        page.y - myPaperDim.second / 2);
+    poly.emplace_back(
+        page.x + myPaperDim.first / 2,
+        page.y + myPaperDim.second / 2);
+    poly.emplace_back(
+        page.x - myPaperDim.first / 2,
+        page.y + myPaperDim.second / 2);
+    int count = 0;
+    for (int pi = 0; pi < myWayPoints.size(); pi++)
+    {
+        if (!covered[pi])
+            if (myWayPoints[pi].isInside(poly))
+            {
+                count++;
+                last = pi;
+                added.push_back(pi);
+            }
+    }
+    return count;
 }
 
 void cMapify::cluster()
@@ -292,6 +470,7 @@ std::vector<cxy> cMapify::missedWaypoints()
             missed.emplace_back(myWayPoints[ii]);
     }
 
+    std::cout << "missed " << missed.size() << "\n";
     return missed;
 }
 
@@ -313,7 +492,8 @@ std::string cMapify::text()
     {
         ss << "Page " << c + 1
            << " center " << myPageCenters[c].x << ", " << myPageCenters[c].y
-           << " " << K.clusters()[c].points().size() << "\r\n";
+           //<< " " << K.clusters()[c].points().size()
+           << "\r\n";
     }
     return ss.str();
 }
@@ -368,15 +548,38 @@ void cGUI::constructMenus()
     mfile.append("Read Waypoint file",
                  [&](const std::string &title)
                  {
+                     // prompt user to select waypoint file
                      wex::filebox fb(fm);
                      auto fname = fb.open();
                      if (fname.empty())
                          return;
+                     fm.text("Mapify " + fname);
                      M.readWaypoints(fname);
-                     M.cluster();
+                     M.calculate();
                      fm.update();
                  });
     mbar.append("File", mfile);
+
+    static wex::menu malgo(fm);
+    malgo.append("Cluster",
+                 [&](const std::string &title)
+                 {
+                     M.algoCluster();
+                     M.calculate();
+                     malgo.check(0);
+                     malgo.check(1, false);
+                     fm.update();
+                 });
+    malgo.append("Greedy",
+                 [&](const std::string &title)
+                 {
+                     M.algoGreedy();
+                     M.calculate();
+                     malgo.check(0, false);
+                     malgo.check(1);
+                     fm.update();
+                 });
+    mbar.append("Algorithm", malgo);
 
     static wex::menu mdisplay(fm);
     mdisplay.append("Visualization",
@@ -420,10 +623,12 @@ void cGUI::constructMenus()
                         M.panDown();
                         fm.update();
                     });
+    malgo.check(0);
     mdisplay.check(0);
     mbar.append("Display", mdisplay);
 }
-void cGUI::registerEventHandlers() {
+void cGUI::registerEventHandlers()
+{
     fm.events().draw(
         [&](PAINTSTRUCT &ps)
         {
