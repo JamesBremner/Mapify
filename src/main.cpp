@@ -24,7 +24,8 @@ cMapify::cMapify()
 
 void cMapify::generateRandom()
 {
-    myPaperDim = std::make_pair(10.0, 7.0);
+    // myPaperDim = std::make_pair(10.0, 7.0);
+    myPaper.set(10.0,7.0);
     for (int k = 0; k < 20; k++)
     {
         myWayPoints.emplace_back(
@@ -36,7 +37,7 @@ void cMapify::generateRandom()
 void cMapify::readWaypoints(const std::string &fname)
 {
     myWayPoints.clear();
-    myPaperDim = std::make_pair(6925, 10000);
+    myPaper.set(6925, 10000);
     std::ifstream ifs(fname);
     if (!ifs.is_open())
         throw std::runtime_error("Cannot open waypoints file");
@@ -144,9 +145,9 @@ std::vector<cxy> cMapify::pageOffsets()
 {
     std::vector<cxy> voff;
     
-    double top = myPaperDim.second / 2;
+    double top = myPaper.dim.y / 2;
     double bottom = -top;
-    double left = myPaperDim.first / 2;
+    double left = myPaper.dim.x / 2;
     double right = -left;
 
     voff.emplace_back(left,top);
@@ -202,19 +203,8 @@ int cMapify::NewPointsInPage(
     std::vector<int> &added,
     int &last)
 {
-    std::vector<cxy> poly;
-    poly.emplace_back(
-        page.x - myPaperDim.first / 2,
-        page.y - myPaperDim.second / 2);
-    poly.emplace_back(
-        page.x + myPaperDim.first / 2,
-        page.y - myPaperDim.second / 2);
-    poly.emplace_back(
-        page.x + myPaperDim.first / 2,
-        page.y + myPaperDim.second / 2);
-    poly.emplace_back(
-        page.x - myPaperDim.first / 2,
-        page.y + myPaperDim.second / 2);
+    std::vector<cxy> poly = myPaper.polygon( page );
+
     int count = 0;
     for (int pi = 0; pi < myWayPoints.size(); pi++)
     {
@@ -309,8 +299,8 @@ bool cMapify::isMaxPaperDimOK()
 
         // If entire cluster will NOT fit inside a single page
         // abandon this solution
-        if (clusterWidth > myPaperDim.first ||
-            clusterHeight > myPaperDim.second)
+        if (clusterWidth > myPaper.dim.x ||
+            clusterHeight > myPaper.dim.y)
         {
             countOversizedClusters++;
         }
@@ -418,8 +408,8 @@ bool cMapify::isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed)
 
         // If entire cluster will NOT fit inside a single page
         // abandon this solution
-        if (clusterWidth > myPaperDim.first ||
-            clusterHeight > myPaperDim.second)
+        if (clusterWidth > myPaper.dim.x ||
+            clusterHeight > myPaper.dim.y)
         {
             return false;
         }
@@ -441,19 +431,7 @@ std::vector<cxy> cMapify::missedWaypoints()
     std::vector<bool> included(myWayPoints.size(), false);
     for (auto &pageCenter : myPageCenters)
     {
-        std::vector<cxy> page;
-        page.emplace_back(
-            pageCenter.x - myPaperDim.first / 2,
-            pageCenter.y - myPaperDim.second / 2);
-        page.emplace_back(
-            pageCenter.x + myPaperDim.first / 2,
-            pageCenter.y - myPaperDim.second / 2);
-        page.emplace_back(
-            pageCenter.x + myPaperDim.first / 2,
-            pageCenter.y + myPaperDim.second / 2);
-        page.emplace_back(
-            pageCenter.x - myPaperDim.first / 2,
-            pageCenter.y + myPaperDim.second / 2);
+        std::vector<cxy> page = myPaper.polygon(pageCenter);
 
         for (int wi = 0; wi < myWayPoints.size(); wi++)
         {
@@ -486,7 +464,8 @@ std::string cMapify::text()
     //     ss << p.x << " " << p.y << ", ";
     // ss << "\n";
 
-    ss << myPageCenters.size() << " pages of " << myPaperDim.first << " by " << myPaperDim.second << "\r\n";
+    ss << myPageCenters.size() << " pages of " << myPaper.dim.x 
+    << " by " << myPaper.dim.y << "\r\n";
 
     for (int c = 0; c < myPageCenters.size(); c++)
     {
@@ -514,8 +493,8 @@ void cMapify::pageDisplay(wex::shapes &S)
 
     if (myDisplayTab == eDisplayTab::viz)
     {
-        int w = myScale * (myPaperDim.first);
-        int h = myScale * (myPaperDim.second);
+        int w = myScale * (myPaper.dim.x);
+        int h = myScale * (myPaper.dim.y);
         for (int c = 0; c < myPageCenters.size(); c++)
             S.rectangle(
                 {(int)(myScale * (myPageCenters[c].x - myXoff) - w / 2),

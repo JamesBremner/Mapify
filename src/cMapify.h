@@ -1,5 +1,46 @@
 #pragma once
 
+class cPaper
+{
+public:
+    cxy dim;
+    std::vector<cxy> cornerOffsets;
+    void set(double width, double height)
+    {
+        dim.x = width;
+        dim.y = height;
+        corners();
+    }
+    /// @brief Locate page corners in map co-ords
+    /// @param center page center location in map co-ords
+    /// @return page corners in map co-ords
+    
+    std::vector<cxy> polygon(const cxy &center) const
+    {
+        std::vector<cxy> poly;
+        for (const auto &c : cornerOffsets)
+            poly.emplace_back(center.x + c.x,center.y+c.y);
+        return poly;
+    }
+
+private:
+    void corners()
+    {
+        cornerOffsets.clear();
+        cornerOffsets.emplace_back(
+            -dim.x / 2,
+            dim.y / 2);
+        cornerOffsets.emplace_back(
+            +dim.x / 2,
+            -dim.y / 2);
+        cornerOffsets.emplace_back(
+            +dim.x / 2,
+            +dim.y / 2);
+        cornerOffsets.emplace_back(
+            -dim.x / 2,
+            +dim.y / 2);
+    }
+};
 class cMapify
 {
 
@@ -59,7 +100,7 @@ public:
 
 private:
     std::vector<cxy> myWayPoints;
-    std::pair<double, double> myPaperDim;
+    cPaper myPaper;
     KMeans K;
     std::vector<cxy> myPageCenters;
     enum class eDisplayTab
@@ -90,9 +131,9 @@ private:
         int &last);
     cxy bestPageLocation(
         const cxy &wpFirstInPage,
-        const std::vector<cxy>& voff,
+        const std::vector<cxy> &voff,
         std::vector<bool> &covered,
         int &bestlast,
-        std::vector<int>& bestadded);
+        std::vector<int> &bestadded);
     std::vector<cxy> pageOffsets();
 };
