@@ -176,7 +176,7 @@ void cMapify::trailer()
 
     for (int p = 0;; p++)
     {
-        cxy page = bestPageLocation(
+        cxy page = bestAdjacent(
             covered,
             bestlast,
             bestadded);
@@ -202,12 +202,13 @@ void cMapify::trailer()
     }
 }
 
-cxy cMapify::bestPageLocation(
+cxy cMapify::bestAdjacent(
     std::vector<bool> &covered,
     int &bestlast,
     std::vector<int> &bestadded)
 {
     cxy page, bestpage;
+    int c, cmax = 0;
     cxy wpFirst = myWayPoints[bestlast + 1];
     bestadded.clear();
 
@@ -223,6 +224,7 @@ cxy cMapify::bestPageLocation(
         m2 = 0;
     cxy emp2 = prevpoly[m2];
 
+    // loop over pages adjacent to exit margin
     for (double off = 0; off <= 1; off += 0.2)
     {
         switch (em)
@@ -244,10 +246,13 @@ cxy cMapify::bestPageLocation(
             page.y = emp1.y - myPaper.dim.y / 2;
             break;
         }
+        // insist that first waypoint is covered
         auto testpoly = myPaper.polygon(page);
         if (!wpFirst.isInside(testpoly))
             continue;
-        int c, cmax = 0;
+
+        // check if page is best found so far
+
         int last;
         std::vector<int> added;
         c = NewPointsInPage(page, covered, added, last);

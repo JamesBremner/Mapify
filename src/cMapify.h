@@ -131,7 +131,7 @@ private:
         bottom,
         left
     };
-    cxy bestPageLocation(
+    cxy bestAdjacent(
         std::vector<bool> &covered,
         int &bestlast,
         std::vector<int> &bestadded);
