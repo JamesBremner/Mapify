@@ -19,13 +19,12 @@ public:
     {
         std::vector<cxy> poly;
         for (const auto &c : cornerOffsets)
-            poly.emplace_back(center.x + c.x,center.y+c.y);
+            poly.emplace_back(center.x + c.x, center.y + c.y);
         return poly;
     }
 
 private:
     void corners();
-
 };
 class cMapify
 {
@@ -108,6 +107,7 @@ private:
 
     void cluster();
     void greedy();
+    void trailer();
     bool isMaxPaperDimOK();
     std::vector<cxy> missedWaypoints();
     void clusterMissed(const std::vector<cxy> &missed);
@@ -123,12 +123,20 @@ private:
         std::vector<bool> &covered,
         int &bestlast,
         std::vector<int> &bestadded);
+
     enum class eMargin
     {
-        top, right, bottom, left
+        top,
+        right,
+        bottom,
+        left
     };
-    eMargin exitMargin( 
-        const cxy& lastPage,
-        const cxy& lastPoint ) const;
+    cxy bestPageLocation(
+        std::vector<bool> &covered,
+        int &bestlast,
+        std::vector<int> &bestadded);
+    eMargin exitMargin(
+        const cxy &lastPage,
+        const cxy &lastPoint) const;
     std::vector<cxy> pageOffsets();
 };
