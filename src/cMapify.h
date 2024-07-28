@@ -14,7 +14,7 @@ public:
     /// @brief Locate page corners in map co-ords
     /// @param center page center location in map co-ords
     /// @return page corners in map co-ords
-    
+
     std::vector<cxy> polygon(const cxy &center) const
     {
         std::vector<cxy> poly;
@@ -24,22 +24,8 @@ public:
     }
 
 private:
-    void corners()
-    {
-        cornerOffsets.clear();
-        cornerOffsets.emplace_back(
-            -dim.x / 2,
-            dim.y / 2);
-        cornerOffsets.emplace_back(
-            +dim.x / 2,
-            -dim.y / 2);
-        cornerOffsets.emplace_back(
-            +dim.x / 2,
-            +dim.y / 2);
-        cornerOffsets.emplace_back(
-            -dim.x / 2,
-            +dim.y / 2);
-    }
+    void corners();
+
 };
 class cMapify
 {
@@ -98,6 +84,8 @@ public:
         myAlgorithm = eAlgorithm::greedy;
     }
 
+    bool unitTest();
+
 private:
     std::vector<cxy> myWayPoints;
     cPaper myPaper;
@@ -135,5 +123,12 @@ private:
         std::vector<bool> &covered,
         int &bestlast,
         std::vector<int> &bestadded);
+    enum class eMargin
+    {
+        top, right, bottom, left
+    };
+    eMargin exitMargin( 
+        const cxy& lastPage,
+        const cxy& lastPoint ) const;
     std::vector<cxy> pageOffsets();
 };

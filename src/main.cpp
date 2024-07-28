@@ -25,7 +25,7 @@ cMapify::cMapify()
 void cMapify::generateRandom()
 {
     // myPaperDim = std::make_pair(10.0, 7.0);
-    myPaper.set(10.0,7.0);
+    myPaper.set(10.0, 7.0);
     for (int k = 0; k < 20; k++)
     {
         myWayPoints.emplace_back(
@@ -132,7 +132,8 @@ void cMapify::greedy()
                     bestadded.begin(), bestadded.end());
                 std::cout << " add\n";
             }
-            else {
+            else
+            {
                 std::cout << " skip ";
             }
 
@@ -144,18 +145,18 @@ void cMapify::greedy()
 std::vector<cxy> cMapify::pageOffsets()
 {
     std::vector<cxy> voff;
-    
+
     double top = myPaper.dim.y / 2;
     double bottom = -top;
     double left = myPaper.dim.x / 2;
     double right = -left;
 
-    voff.emplace_back(left,top);
-    voff.emplace_back(0,top);
-    voff.emplace_back(right,top);
+    voff.emplace_back(left, top);
+    voff.emplace_back(0, top);
+    voff.emplace_back(right, top);
 
-    voff.emplace_back(right,0);
-    voff.emplace_back(right,bottom);
+    voff.emplace_back(right, 0);
+    voff.emplace_back(right, bottom);
 
     // voff.emplace_back(0,bottom);
     // voff.emplace_back(left,bottom);
@@ -167,7 +168,7 @@ std::vector<cxy> cMapify::pageOffsets()
 
 cxy cMapify::bestPageLocation(
     const cxy &wpFirstInPage,
-    const std::vector<cxy>& voff,
+    const std::vector<cxy> &voff,
     std::vector<bool> &covered,
     int &bestlast,
     std::vector<int> &bestadded)
@@ -203,7 +204,7 @@ int cMapify::NewPointsInPage(
     std::vector<int> &added,
     int &last)
 {
-    std::vector<cxy> poly = myPaper.polygon( page );
+    std::vector<cxy> poly = myPaper.polygon(page);
 
     int count = 0;
     for (int pi = 0; pi < myWayPoints.size(); pi++)
@@ -464,8 +465,8 @@ std::string cMapify::text()
     //     ss << p.x << " " << p.y << ", ";
     // ss << "\n";
 
-    ss << myPageCenters.size() << " pages of " << myPaper.dim.x 
-    << " by " << myPaper.dim.y << "\r\n";
+    ss << myPageCenters.size() << " pages of " << myPaper.dim.x
+       << " by " << myPaper.dim.y << "\r\n";
 
     for (int c = 0; c < myPageCenters.size(); c++)
     {
@@ -507,6 +508,62 @@ void cMapify::pageDisplay(wex::shapes &S)
     }
 }
 
+cMapify::eMargin cMapify::exitMargin(
+    const cxy &lastPageCenter,
+    const cxy &lastPoint) const
+{
+    eMargin margin;
+    double bestdist = INT_MAX;
+    int imbest;
+    auto poly = myPaper.polygon(lastPageCenter);
+
+    for (int im = 0; im < 4; im++)
+    {
+        int im2 = im + 1;
+        if (im2 > 3)
+            im2 = 0;
+        double d2 = lastPoint.dis2toline(poly[im], poly[im2]);
+        if (d2 < bestdist)
+        {
+            bestdist = d2;
+            imbest = im;
+        }
+    }
+    eMargin dbg = (eMargin) imbest;
+    return (eMargin) imbest;
+}
+
+bool cMapify::unitTest()
+{
+    myPaper.set(10,10);
+    if( exitMargin( cxy(10,10), cxy(1,10) ) != eMargin::left)
+        return false;
+    if( exitMargin( cxy(10,10), cxy(9,1) ) != eMargin::top)
+        return false;
+    if( exitMargin( cxy(10,10), cxy(19,10) ) != eMargin::right)
+        return false;
+    if( exitMargin( cxy(10,10), cxy(12,19) ) != eMargin::bottom)
+        return false;
+    return true;
+}
+
+    void cPaper::corners()
+    {
+        cornerOffsets.clear();
+        cornerOffsets.emplace_back(
+            -dim.x / 2,
+            -dim.y / 2);
+        cornerOffsets.emplace_back(
+            +dim.x / 2,
+            -dim.y / 2);
+        cornerOffsets.emplace_back(
+            +dim.x / 2,
+            +dim.y / 2);
+        cornerOffsets.emplace_back(
+            -dim.x / 2,
+            +dim.y / 2);
+    }
+
 cGUI::cGUI()
     : cStarterGUI(
           "Mapify",
@@ -533,6 +590,10 @@ void cGUI::constructMenus()
                      if (fname.empty())
                          return;
                      fm.text("Mapify " + fname);
+                     if( ! M.unitTest() ) {
+                        wex::msgbox("Unit test failed");
+                        exit(1);
+                 }
                      M.readWaypoints(fname);
                      M.calculate();
                      fm.update();
