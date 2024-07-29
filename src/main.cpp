@@ -199,7 +199,7 @@ void cMapify::adjacentThenCluster()
             break;
     }
 
-     clusterUncovered( myCovered );
+     clusterUncovered();
 }
 
 cxy cMapify::bestAdjacent(
@@ -214,7 +214,6 @@ cxy cMapify::bestAdjacent(
 
     // margin of last page closest to last waypoint in page
     auto em = exitMargin(
-        myPageCenters.back(),
         myWayPoints[bestlast]);
 
     auto prevpoly = myPaper.polygon(myPageCenters.back());
@@ -382,14 +381,28 @@ void cMapify::cluster()
         break;
     }
 }
-void cMapify::clusterUncovered(const std::vector<bool> covered)
+
+int cMapify::uncoveredCount()
 {
-    K.clearData();
+    int count = 0;
+    for( bool c : myCovered )
+        if( ! c )
+            count++;
+    return count;
+}
+void cMapify::clusterUncovered()
+{
+    if( ! uncoveredCount())
+    {
+        std::cout << "all waypoints covered\n";
+        return;
+    }
 
     // add uncovered waypoints to KMeans class instance K
+    K.clearData();
     for (int ip = 0; ip < myWayPoints.size(); ip++)
     {
-        if (!covered[ip])
+        if (!myCovered[ip])
             K.Add({myWayPoints[ip].x, myWayPoints[ip].y});
     }
     // increment number of pages until fit found
@@ -414,6 +427,10 @@ void cMapify::clusterUncovered(const std::vector<bool> covered)
         myPageCenters.insert(
             myPageCenters.end(),
             pagesForMissed.begin(), pagesForMissed.end());
+
+        std::cout << "Cluster pass added " << pagesForMissed.size()
+            << ", total pages " << myPageCenters.size()
+            << "\n";
 
         // Display fit found on terminal
         std::cout << text();
@@ -566,10 +583,10 @@ bool cMapify::isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed)
         clusterWidth = maxx - minx;
         clusterHeight = maxy - miny;
 
-        std::cout << "Page " << c << " min size: "
-                  << clusterWidth << " " << clusterHeight
-                  << " range: " << minx << " " << maxx << " " << miny << " " << maxy
-                  << "\n";
+        // std::cout << "Page " << c << " min size: "
+        //           << clusterWidth << " " << clusterHeight
+        //           << " range: " << minx << " " << maxx << " " << miny << " " << maxy
+        //           << "\n";
 
         // If entire cluster will NOT fit inside a single page
         // abandon this solution
@@ -684,13 +701,12 @@ void cMapify::pageDisplay(wex::shapes &S)
 }
 
 cMapify::eMargin cMapify::exitMargin(
-    const cxy &lastPageCenter,
     const cxy &lastPoint) const
 {
     eMargin margin;
     double bestdist = INT_MAX;
     int imbest;
-    auto poly = myPaper.polygon(lastPageCenter);
+    auto poly = myPaper.polygon(myPageCenters.back());
 
     for (int im = 0; im < 4; im++)
     {
@@ -711,13 +727,15 @@ cMapify::eMargin cMapify::exitMargin(
 bool cMapify::unitTest()
 {
     myPaper.set(10, 10);
-    if (exitMargin(cxy(10, 10), cxy(1, 10)) != eMargin::left)
+    myPageCenters.clear();
+    myPageCenters.emplace_back(10,10);
+    if (exitMargin( cxy(1, 10)) != eMargin::left)
         return false;
-    if (exitMargin(cxy(10, 10), cxy(9, 1)) != eMargin::top)
+    if (exitMargin( cxy(9, 1)) != eMargin::top)
         return false;
-    if (exitMargin(cxy(10, 10), cxy(19, 10)) != eMargin::right)
+    if (exitMargin( cxy(19, 10)) != eMargin::right)
         return false;
-    if (exitMargin(cxy(10, 10), cxy(12, 19)) != eMargin::bottom)
+    if (exitMargin( cxy(12, 19)) != eMargin::bottom)
         return false;
     return true;
 }

@@ -143,10 +143,10 @@ private:
         int &bestlast,
         std::vector<int> &bestadded);
     eMargin exitMargin(
-        const cxy &lastPage,
         const cxy &lastPoint) const;
-    void clusterUncovered(
-        const std::vector<bool> covered );
+    int uncoveredCount();
+    void clusterUncovered();
+    
     std::vector<cxy> pageOffsets();
 
 };
