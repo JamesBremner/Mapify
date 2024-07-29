@@ -20,19 +20,24 @@ To clarify: Given a list of 2d points, find the minimum amount of boxes they wil
 
 ## Algorithm
 
+A two-pass algorithm.  First pass maximizes point coverage with no page overlaps.  Second pass clusters uncovered points, with page overlaps allowd.
+
 ```
+  ( Pass 1 )
+- Create a page that covers the first waypoint and the maximum number of other waypoints
+- FOR ever
+   - find page margin ( top, left, right, bottom ) nearest to last waypoint covered
+   - add page adjacent without overlap to margin that covers the maximum number of new waypoints
+   - IF last waypoint covered
+        - BREAK
+- ENDLOOP for ever
+
+  ( Pass 2 )
 - FOR pageCount = 1 to 100
-  - Apply K-Means algo to waypoints to find pageCount clusters
+  - Apply K-Means algo to uncovered waypoints to find pageCount clusters
   - Create page centred on center of each cluster
   - If all waypoints on at least one page
       - DONE
-  - If missed waypoints count < some specified % of total waypoints
-       - FOR missedPageCount = 1 to 100
-           - Apply K-Means algo to missed waypoints to find missedPageCount clusters
-           - Create page on center of each missed cluster
-           - If all waypoints on at least one page
-                - DONE
-       - ENDLOOP over missedPageCount
 - ENDLOOP over pageCount
 - FAILED
 ```
