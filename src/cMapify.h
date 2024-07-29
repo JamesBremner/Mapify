@@ -36,6 +36,7 @@ public:
     void calculate();
     void waypointsDisplay(wex::shapes &S);
     void pageDisplay(wex::shapes &S);
+    void uncoveredDisplay(wex::shapes &S);
     std::string text();
 
     void incScale()
@@ -70,6 +71,10 @@ public:
     {
         myDisplayTab = eDisplayTab::page;
     }
+    void DisplayUncovered()
+    {
+        myDisplayTab = eDisplayTab::uncovered;
+    }
     bool isDisplayPages() const
     {
         return myDisplayTab == eDisplayTab::page;
@@ -87,13 +92,15 @@ public:
 
 private:
     std::vector<cxy> myWayPoints;
+    std::vector<bool> myCovered;
     cPaper myPaper;
     KMeans K;
     std::vector<cxy> myPageCenters;
     enum class eDisplayTab
     {
         viz,
-        page
+        page,
+        uncovered
     };
     eDisplayTab myDisplayTab;
     enum class eAlgorithm
@@ -107,7 +114,7 @@ private:
 
     void cluster();
     void greedy();
-    void trailer();
+    void adjacentThenCluster();
     bool isMaxPaperDimOK();
     std::vector<cxy> missedWaypoints();
     void clusterMissed(const std::vector<cxy> &missed);
@@ -138,5 +145,8 @@ private:
     eMargin exitMargin(
         const cxy &lastPage,
         const cxy &lastPoint) const;
+    void clusterUncovered(
+        const std::vector<bool> covered );
     std::vector<cxy> pageOffsets();
+
 };

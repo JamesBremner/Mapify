@@ -65,7 +65,7 @@ void cMapify::calculate()
     //     greedy();
     //     break;
     // }
-    trailer();
+    adjacentThenCluster();
 }
 void cMapify::greedy()
 {
@@ -143,14 +143,14 @@ void cMapify::greedy()
     }
 }
 
-void cMapify::trailer()
+void cMapify::adjacentThenCluster()
 {
     if (!myWayPoints.size())
         return;
 
     myPageCenters.clear();
-
-    std::vector<bool> covered(myWayPoints.size(), false);
+    myCovered.clear();
+    myCovered.resize(myWayPoints.size(), false);
 
     // calc offsets from waypoint to paper center
     // to position the paper so the waypoint is on margin
@@ -164,20 +164,19 @@ void cMapify::trailer()
     bestpage = bestPageLocation(
         myWayPoints[0],
         voff,
-        covered,
+        myCovered,
         bestlast,
         bestadded);
 
     // always add first page
     myPageCenters.push_back(bestpage);
-    covered.insert(
-        covered.end(),
-        bestadded.begin(), bestadded.end());
+    for (int i = 0; i < bestadded.size(); i++)
+        myCovered[i] = true;
 
     for (int p = 0;; p++)
     {
         cxy page = bestAdjacent(
-            covered,
+            myCovered,
             bestlast,
             bestadded);
 
@@ -188,9 +187,8 @@ void cMapify::trailer()
             break;
 
         myPageCenters.push_back(page);
-        covered.insert(
-            covered.end(),
-            bestadded.begin(), bestadded.end());
+        for (int i = 0; i < bestadded.size(); i++)
+            myCovered[bestadded[i]] = true;
 
         // reached end of trail
         if (bestlast == myWayPoints.size() - 1)
@@ -200,6 +198,8 @@ void cMapify::trailer()
         if (p > 300)
             break;
     }
+
+     clusterUncovered( myCovered );
 }
 
 cxy cMapify::bestAdjacent(
@@ -375,6 +375,45 @@ void cMapify::cluster()
             // continue to increase number of pages
             continue;
         }
+
+        // Display fit found on terminal
+        std::cout << text();
+
+        break;
+    }
+}
+void cMapify::clusterUncovered(const std::vector<bool> covered)
+{
+    K.clearData();
+
+    // add uncovered waypoints to KMeans class instance K
+    for (int ip = 0; ip < myWayPoints.size(); ip++)
+    {
+        if (!covered[ip])
+            K.Add({myWayPoints[ip].x, myWayPoints[ip].y});
+    }
+    // increment number of pages until fit found
+    for (int PageCount = 1; PageCount < 100; PageCount++)
+    {
+        // Init KMeans
+        K.Init(PageCount);
+
+        // Run KMeans
+        K.Iter(10);
+
+        // check that every cluster fits into one page
+        std::vector<cxy> pagesForMissed;
+        if (!isMaxPaperDimOKPass2(pagesForMissed))
+        {
+            std::cout << "Cannot fit into " << PageCount << " pages\n";
+
+            // continue to increase number of pages
+            continue;
+        }
+
+        myPageCenters.insert(
+            myPageCenters.end(),
+            pagesForMissed.begin(), pagesForMissed.end());
 
         // Display fit found on terminal
         std::cout << text();
@@ -613,6 +652,17 @@ void cMapify::waypointsDisplay(wex::shapes &S)
             myScale * (p.x - myXoff),
             myScale * (p.y - myYoff));
 }
+void cMapify::uncoveredDisplay(wex::shapes &S)
+{
+    if (myDisplayTab != eDisplayTab::uncovered)
+        return;
+    S.color(0x0000FF);
+    for (int ic = 0; ic < myCovered.size(); ic++)
+        if (!myCovered[ic])
+            S.pixel(
+                myScale * (myWayPoints[ic].x - myXoff),
+                myScale * (myWayPoints[ic].y - myYoff));
+}
 void cMapify::pageDisplay(wex::shapes &S)
 {
     S.color(0);
@@ -627,7 +677,7 @@ void cMapify::pageDisplay(wex::shapes &S)
                  (int)(myScale * (myPageCenters[c].y - myYoff) - h / 2),
                  w, h});
     }
-    else
+    if (myDisplayTab == eDisplayTab::page)
     {
         S.text(text(), {10, 10, 1000, 1000});
     }
@@ -726,26 +776,26 @@ void cGUI::constructMenus()
                  });
     mbar.append("File", mfile);
 
-    static wex::menu malgo(fm);
-    malgo.append("Cluster",
-                 [&](const std::string &title)
-                 {
-                     M.algoCluster();
-                     M.calculate();
-                     malgo.check(0);
-                     malgo.check(1, false);
-                     fm.update();
-                 });
-    malgo.append("Greedy",
-                 [&](const std::string &title)
-                 {
-                     M.algoGreedy();
-                     M.calculate();
-                     malgo.check(0, false);
-                     malgo.check(1);
-                     fm.update();
-                 });
-    mbar.append("Algorithm", malgo);
+    // static wex::menu malgo(fm);
+    // malgo.append("Cluster",
+    //              [&](const std::string &title)
+    //              {
+    //                  M.algoCluster();
+    //                  M.calculate();
+    //                  malgo.check(0);
+    //                  malgo.check(1, false);
+    //                  fm.update();
+    //              });
+    // malgo.append("Greedy",
+    //              [&](const std::string &title)
+    //              {
+    //                  M.algoGreedy();
+    //                  M.calculate();
+    //                  malgo.check(0, false);
+    //                  malgo.check(1);
+    //                  fm.update();
+    //              });
+    // mbar.append("Algorithm", malgo);
 
     static wex::menu mdisplay(fm);
     mdisplay.append("Visualization",
@@ -754,6 +804,7 @@ void cGUI::constructMenus()
                         M.DisplayViz();
                         mdisplay.check(0);
                         mdisplay.check(1, false);
+                        mdisplay.check(2, false);
                         fm.update();
                     });
     mdisplay.append("Page Locations",
@@ -762,6 +813,16 @@ void cGUI::constructMenus()
                         M.DisplayPages();
                         mdisplay.check(0, false);
                         mdisplay.check(1);
+                        mdisplay.check(2, false);
+                        fm.update();
+                    });
+    mdisplay.append("Uncovered",
+                    [&](const std::string &title)
+                    {
+                        M.DisplayUncovered();
+                        mdisplay.check(0, false);
+                        mdisplay.check(1, false);
+                        mdisplay.check(2);
                         fm.update();
                     });
     mdisplay.appendSeparator();
@@ -789,7 +850,6 @@ void cGUI::constructMenus()
                         M.panDown();
                         fm.update();
                     });
-    malgo.check(0);
     mdisplay.check(0);
     mbar.append("Display", mdisplay);
 }
@@ -801,6 +861,7 @@ void cGUI::registerEventHandlers()
             wex::shapes S(ps);
             M.waypointsDisplay(S);
             M.pageDisplay(S);
+            M.uncoveredDisplay(S);
         });
 
     // handle mouse wheel
