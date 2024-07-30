@@ -1,10 +1,20 @@
 #pragma once
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <limits>
 
+#include <wex.h>
+#include <cxy.h>
+#include "KMeans.h"
 class cPaper
 {
 public:
     cxy dim;
-    std::vector<cxy> cornerOffsets;
+    
     void set(double width, double height)
     {
         dim.x = width;
@@ -24,8 +34,24 @@ public:
     }
 
 private:
+    std::vector<cxy> cornerOffsets;
+
     void corners();
 };
+
+class cPage {
+public:
+    cxy center;
+    bool rotated;
+
+    cPage( const cxy& c)
+    : center( c )
+    {}
+    cPage(double width, double height)
+    : center( width,height)
+    {}
+};
+
 class cMapify
 {
 
@@ -95,7 +121,7 @@ private:
     std::vector<bool> myCovered;
     cPaper myPaper;
     KMeans K;
-    std::vector<cxy> myPageCenters;
+    std::vector<cPage> myPages;
     enum class eDisplayTab
     {
         viz,
