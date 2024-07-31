@@ -46,6 +46,8 @@ A two-pass algorithm.  First pass maximizes point coverage with no page overlaps
 
 To read a waypoint file select from menu File
 
+To run the unit tests, select from menu file.
+
 To display a vizualization of the waypoints ( red dots ) and the page locations ( black rectangles ) select from menu Display
 
 To display page locations ( x,y ) select from menu Display
