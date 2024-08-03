@@ -10,6 +10,9 @@
 #include <wex.h>
 #include <cxy.h>
 #include "KMeans.h"
+
+class cPage;
+
 class cPaper
 {
 public:
@@ -21,17 +24,12 @@ public:
         dim.y = height;
         corners();
     }
+
     /// @brief Locate page corners in map co-ords
-    /// @param center page center location in map co-ords
+    /// @param page 
     /// @return page corners in map co-ords
 
-    std::vector<cxy> polygon(const cxy &center) const
-    {
-        std::vector<cxy> poly;
-        for (const auto &c : cornerOffsets)
-            poly.emplace_back(center.x + c.x, center.y + c.y);
-        return poly;
-    }
+    //std::vector<cxy> polygon(const cPage &page) const;
 
 private:
     std::vector<cxy> cornerOffsets;
@@ -44,12 +42,39 @@ public:
     cxy center;
     bool rotated;
 
+    cPage() :
+    rotated( false ) {}
     cPage( const cxy& c)
-    : center( c )
+    : center( c ),rotated( false )
     {}
     cPage(double width, double height)
-    : center( width,height)
+    : center( width,height), rotated( false )
     {}
+
+    cxy topleft( const cPaper& paper ) const
+    {
+        return polygon(paper)[0];
+    }
+    cxy topright( const cPaper& paper ) const
+    {
+        return polygon(paper)[1];
+    }
+    cxy bottomright( const cPaper& paper ) const
+    {
+        return polygon(paper)[2];
+    }
+    cxy bottomleft( const cPaper& paper ) const
+    {
+        return polygon(paper)[3];
+    }
+
+    bool isInside( const cxy& p, const cPaper& paper ) const
+    {
+        return p.isInside( polygon( paper ));
+    }
+
+    std::vector<cxy> polygon( const cPaper& paper ) const;
+
 };
 
 class cMapify
@@ -57,6 +82,14 @@ class cMapify
 
 public:
     cMapify();
+    void addWaypoint( double x, double y )
+    {
+        myWayPoints.emplace_back(x,y);
+    }
+    void paper( double w, double h )
+    {
+        myPaper.set(w,h);
+    }
     void generateRandom();
     void readWaypoints(const std::string &fname);
     void calculate();
@@ -114,6 +147,11 @@ public:
         myAlgorithm = eAlgorithm::greedy;
     }
 
+    int pageCount()
+    {
+        return myPages.size();
+    }
+
     bool unitTest();
 
 private:
@@ -145,9 +183,8 @@ private:
     std::vector<cxy> missedWaypoints();
     void clusterMissed(const std::vector<cxy> &missed);
     bool isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed);
-    int NewPointsInPage(
-        const cxy &page,
-        const std::vector<bool> &covered,
+    int newPointsInPage(
+        const cPage &page,
         std::vector<int> &added,
         int &last);
     cxy bestPageLocation(
@@ -164,14 +201,24 @@ private:
         bottom,
         left
     };
-    cxy bestAdjacent(
-        std::vector<bool> &covered,
+    cPage bestAdjacent(
         int &bestlast,
         std::vector<int> &bestadded);
     eMargin exitMargin(
         const cxy &lastPoint) const;
     int uncoveredCount();
-    void clusterUncovered();
+    void clusterUncovered(); 
+
+    /// @brief locate next page
+    /// @param page previous page
+    /// @param off fraction of possible location range to apply
+    /// @param em prev page margin next page is adjacent to
+    /// @return next page
+
+    cPage nextPageLocate(
+    const cPage& page,
+    double off,
+    eMargin em );
     
     std::vector<cxy> pageOffsets();
 
