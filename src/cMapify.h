@@ -13,11 +13,19 @@
 
 class cPage;
 
+enum class eMargin
+{
+    top,
+    right,
+    bottom,
+    left
+};
+
 class cPaper
 {
 public:
     cxy dim;
-    
+
     void set(double width, double height)
     {
         dim.x = width;
@@ -26,10 +34,10 @@ public:
     }
 
     /// @brief Locate page corners in map co-ords
-    /// @param page 
+    /// @param page
     /// @return page corners in map co-ords
 
-    //std::vector<cxy> polygon(const cPage &page) const;
+    // std::vector<cxy> polygon(const cPage &page) const;
 
 private:
     std::vector<cxy> cornerOffsets;
@@ -37,44 +45,46 @@ private:
     void corners();
 };
 
-class cPage {
+class cPage
+{
 public:
-    cxy center;
-    bool rotated;
+    cxy center;   // page center location
+    bool rotated; // true if page rotated 90o from input paper dimensions
+    eMargin em;   // exit margin from previous page
 
-    cPage() :
-    rotated( false ) {}
-    cPage( const cxy& c)
-    : center( c ),rotated( false )
-    {}
+    cPage() : rotated(false) {}
+    cPage(const cxy &c)
+        : center(c), rotated(false)
+    {
+    }
     cPage(double width, double height)
-    : center( width,height), rotated( false )
-    {}
+        : center(width, height), rotated(false)
+    {
+    }
 
-    cxy topleft( const cPaper& paper ) const
+    cxy topleft(const cPaper &paper) const
     {
         return polygon(paper)[0];
     }
-    cxy topright( const cPaper& paper ) const
+    cxy topright(const cPaper &paper) const
     {
         return polygon(paper)[1];
     }
-    cxy bottomright( const cPaper& paper ) const
+    cxy bottomright(const cPaper &paper) const
     {
         return polygon(paper)[2];
     }
-    cxy bottomleft( const cPaper& paper ) const
+    cxy bottomleft(const cPaper &paper) const
     {
         return polygon(paper)[3];
     }
 
-    bool isInside( const cxy& p, const cPaper& paper ) const
+    bool isInside(const cxy &p, const cPaper &paper) const
     {
-        return p.isInside( polygon( paper ));
+        return p.isInside(polygon(paper));
     }
 
-    std::vector<cxy> polygon( const cPaper& paper ) const;
-
+    std::vector<cxy> polygon(const cPaper &paper) const;
 };
 
 class cMapify
@@ -82,13 +92,13 @@ class cMapify
 
 public:
     cMapify();
-    void addWaypoint( double x, double y )
+    void addWaypoint(double x, double y)
     {
-        myWayPoints.emplace_back(x,y);
+        myWayPoints.emplace_back(x, y);
     }
-    void paper( double w, double h )
+    void paper(double w, double h)
     {
-        myPaper.set(w,h);
+        myPaper.set(w, h);
     }
     void generateRandom();
     void readWaypoints(const std::string &fname);
@@ -194,20 +204,32 @@ private:
         int &bestlast,
         std::vector<int> &bestadded);
 
-    enum class eMargin
-    {
-        top,
-        right,
-        bottom,
-        left
-    };
+    /// @brief  find best page adjacent to last page
+    /// @param bestlast  the last waypoint covered by last page
+    /// @param bestadded waypoint indices of new points covered by last page
+    /// @return adjacent page
+
     cPage bestAdjacent(
         int &bestlast,
         std::vector<int> &bestadded);
+
+    /// @brief find best page adjacent last along a margin
+    /// @param[in] margin margin of prev page
+    /// @param[in] prevlast last waypoint in previous page
+    /// @param[out] bestlast last waypoint in new page
+    /// @param[out] bestadded additiona waypoints covered by be page
+    /// @return new page
+    
+    cPage bestAdjacent(
+        eMargin margin,
+        int prevlast,
+        int &bestlast,
+        std::vector<int> &bestadded);
+
     eMargin exitMargin(
         const cxy &lastPoint) const;
     int uncoveredCount();
-    void clusterUncovered(); 
+    void clusterUncovered();
 
     /// @brief locate next page
     /// @param page previous page
@@ -216,10 +238,9 @@ private:
     /// @return next page
 
     cPage nextPageLocate(
-    const cPage& page,
-    double off,
-    eMargin em );
-    
-    std::vector<cxy> pageOffsets();
+        const cPage &page,
+        double off,
+        eMargin em);
 
+    std::vector<cxy> pageOffsets();
 };

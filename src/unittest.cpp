@@ -73,7 +73,7 @@ bool cMapify::unitTest()
         m.readWaypoints("../dat/unittest1.txt");
         m.calculate();
         auto result = m.text();
-        if (result.find("6 pages") != 0)
+        if (result.find("7 pages") != 0)
             return false;
     }
     catch (...)

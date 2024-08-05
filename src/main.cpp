@@ -152,13 +152,6 @@ void cMapify::adjacentThenCluster()
     int bestlast;
     std::vector<int> bestadded;
 
-    // bestpage = bestPageLocation(
-    //     myWayPoints[0],
-    //     voff,
-    //     myCovered,
-    //     bestlast,
-    //     bestadded);
-
     // locate the first page with the first waypoint at the center
     bestpage.center = myWayPoints[0];
     for (int i = 0; i < myWayPoints.size(); i++)
@@ -166,7 +159,7 @@ void cMapify::adjacentThenCluster()
         if (bestpage.isInside(myWayPoints[i], myPaper))
         {
             bestlast = i;
-            bestadded.push_back( i );
+            bestadded.push_back(i);
             myCovered[i] = true;
         }
     }
@@ -202,31 +195,86 @@ void cMapify::adjacentThenCluster()
             break;
     }
 
-    // clusterUncovered();
+    clusterUncovered();
 }
 
 cPage cMapify::bestAdjacent(
     int &bestlast,
     std::vector<int> &bestadded)
 {
-    std::cout << "bestAdjacent\n";
+    //std::cout << "bestAdjacent " << myPages.size();
 
     cPage page, bestpage;
-    int c, cmax = 0;
-    cxy wpFirst = myWayPoints[bestlast + 1];
     bestadded.clear();
+    int last;
+    std::vector<int> added;
+    int prevlast = bestlast;
 
-    // margin of last page closest to last waypoint in page
+    // exit margin of last page closest to last waypoint in page
     auto em = exitMargin(
         myWayPoints[bestlast]);
 
+    //std::cout << " exit margin " << (int)em << "\n";
+
+    // best page adjacent to exit margin
+    page = bestAdjacent(
+        em,
+        prevlast,
+        last,
+        added);
+
+    if (added.size())
+    {
+        // found page that covers new points
+        bestlast = last;
+        bestadded = added;
+        return page;
+    }
+
+    // try other margins
+    for (int iem2 = 0; iem2 < 4; iem2++)
+    {
+        if (iem2 == (int)em)
+            continue;
+
+        page = bestAdjacent(
+            (eMargin)iem2,
+            prevlast,
+            last,
+            added);
+    
+        if( added.size() > bestadded.size() ) {
+            bestadded = added;
+            bestlast = last;
+            bestpage = page;
+        }
+    }
+    return bestpage;
+}
+
+cPage cMapify::bestAdjacent(
+    eMargin margin,
+    int prevlast,
+    int &newlast,
+    std::vector<int> &bestadded)
+{
+    // std::cout << "bestAdjacent " << myPages.size() 
+    // << " margin " << (int) margin
+    // << " prevlast " << prevlast
+    // << "\n";
+
+    cPage page, bestpage;
+    int c, cmax = 0;
+    cxy wpFirst = myWayPoints[prevlast + 1];
+    bestadded.clear();
+
     // loop over pages adjacent to exit margin
-    for (double off = 0; off <= 1; off += 0.25)
+    for (double off = 0; off <= 1; off += 0.1)
     {
         cPage next = nextPageLocate(
             myPages.back(),
             off,
-            em);
+            margin);
 
         // insist that first waypoint is covered
         if (!next.isInside(wpFirst, myPaper))
@@ -237,19 +285,19 @@ cPage cMapify::bestAdjacent(
         int last;
         std::vector<int> added;
         c = newPointsInPage(next.center, added, last);
-        std::cout << c << " new points for "
-                  << next.center.x << " " << next.center.y
-                  << "\n";
+        // std::cout << c << " new points for "
+        //           << next.center.x << " " << next.center.y
+        //           << "\n";
         if (c > cmax)
         {
             cmax = c;
             bestpage = next;
-            bestlast = last;
+            newlast = last;
             bestadded = added;
         }
 
         page.rotated = true;
-        next = nextPageLocate(page, off, em);
+        next = nextPageLocate(page, off, margin);
 
         // insist that first waypoint is covered
         if (!next.isInside(wpFirst, myPaper))
@@ -257,17 +305,18 @@ cPage cMapify::bestAdjacent(
         continue;
 
         c = newPointsInPage(next.center, added, last);
-        std::cout << c << " new points for rotated "
-                  << next.center.x << " " << next.center.y
-                  << "\n";
+        // std::cout << c << " new points for rotated "
+        //           << next.center.x << " " << next.center.y
+        //           << "\n";
         if (c > cmax)
         {
             cmax = c;
             bestpage = next;
-            bestlast = last;
+            newlast = last;
             bestadded = added;
         }
     }
+
     return bestpage;
 }
 
@@ -277,6 +326,7 @@ cPage cMapify::nextPageLocate(
     eMargin em)
 {
     cPage next;
+    next.em = em;
 
     // auto prevpoly = myPaper.polygon(page);
 
@@ -317,30 +367,6 @@ cPage cMapify::nextPageLocate(
     }
 
     return next;
-}
-
-std::vector<cxy> cMapify::pageOffsets()
-{
-    std::vector<cxy> voff;
-
-    double top = myPaper.dim.y / 2;
-    double bottom = -top;
-    double left = myPaper.dim.x / 2;
-    double right = -left;
-
-    voff.emplace_back(left, top);
-    voff.emplace_back(0, top);
-    voff.emplace_back(right, top);
-
-    voff.emplace_back(right, 0);
-    voff.emplace_back(right, bottom);
-
-    // voff.emplace_back(0,bottom);
-    // voff.emplace_back(left,bottom);
-
-    // voff.emplace_back(left,0);
-
-    return voff;
 }
 
 cxy cMapify::bestPageLocation(
@@ -751,12 +777,13 @@ void cMapify::pageDisplay(wex::shapes &S)
     }
 }
 
-cMapify::eMargin cMapify::exitMargin(
+eMargin cMapify::exitMargin(
     const cxy &lastPoint) const
 {
     eMargin margin;
     double bestdist = INT_MAX;
     int imbest;
+
     auto poly = myPages.back().polygon(myPaper);
 
     for (int im = 0; im < 4; im++)
