@@ -42,6 +42,8 @@ void cMapify::readWaypoints(const std::string &fname)
             atof(line.substr(0, p).c_str()),
             atof(line.substr(p + 1).c_str()));
     }
+
+    scale();
 }
 
 void cMapify::calculate()
@@ -202,7 +204,7 @@ cPage cMapify::bestAdjacent(
     int &bestlast,
     std::vector<int> &bestadded)
 {
-    //std::cout << "bestAdjacent " << myPages.size();
+    // std::cout << "bestAdjacent " << myPages.size();
 
     cPage page, bestpage;
     bestadded.clear();
@@ -214,7 +216,7 @@ cPage cMapify::bestAdjacent(
     auto em = exitMargin(
         myWayPoints[bestlast]);
 
-    //std::cout << " exit margin " << (int)em << "\n";
+    // std::cout << " exit margin " << (int)em << "\n";
 
     // best page adjacent to exit margin
     page = bestAdjacent(
@@ -242,8 +244,9 @@ cPage cMapify::bestAdjacent(
             prevlast,
             last,
             added);
-    
-        if( added.size() > bestadded.size() ) {
+
+        if (added.size() > bestadded.size())
+        {
             bestadded = added;
             bestlast = last;
             bestpage = page;
@@ -258,7 +261,7 @@ cPage cMapify::bestAdjacent(
     int &newlast,
     std::vector<int> &bestadded)
 {
-    // std::cout << "bestAdjacent " << myPages.size() 
+    // std::cout << "bestAdjacent " << myPages.size()
     // << " margin " << (int) margin
     // << " prevlast " << prevlast
     // << "\n";
@@ -736,10 +739,40 @@ std::string cMapify::text()
     return ss.str();
 }
 
+void cMapify::scale()
+{
+    double xmin, xmax, ymin, ymax;
+    xmax = ymax = 0;
+    xmin = ymin = INT_MAX;
+    for (auto &p : myWayPoints)
+    {
+        if (p.x < xmin)
+            xmin = p.x;
+        if (p.y < ymin)
+            ymin = p.y;
+        if (p.x > xmax)
+            xmax = p.x;
+        if (p.y > ymax)
+            ymax = p.y;
+    }
+
+    myXoff = xmin;
+    myYoff = ymin;
+
+    double xscale = 600 / (xmax - xmin);
+    double yscale = 600 / (ymax - ymin);
+    myScale = xscale;
+    if (yscale < xscale)
+        myScale = yscale;
+}
+
 void cMapify::waypointsDisplay(wex::shapes &S)
 {
+    if (!myWayPoints.size())
+        return;
     if (myDisplayTab != eDisplayTab::viz)
         return;
+
     S.color(0x0000FF);
     for (auto &p : myWayPoints)
         S.pixel(

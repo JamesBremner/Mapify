@@ -242,5 +242,7 @@ private:
         double off,
         eMargin em);
 
+    void scale();
+
     std::vector<cxy> pageOffsets();
 };
