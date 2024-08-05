@@ -56,3 +56,8 @@ To zoom vizualization in or out, use the mouse wheel.
 
 To pan vizualization, select from menu Display
 
+
+## Results
+
+![image](https://github.com/user-attachments/assets/c823184a-2760-415f-8def-185366005447)
+
