@@ -57,6 +57,11 @@ public:
         : center(c), rotated(false)
     {
     }
+
+    /// @brief Construct centered at specified point
+    /// @param width
+    /// @param height
+
     cPage(double width, double height)
         : center(width, height), rotated(false)
     {
@@ -193,6 +198,15 @@ private:
     std::vector<cxy> missedWaypoints();
     void clusterMissed(const std::vector<cxy> &missed);
     bool isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed);
+
+    /// @brief locate first page
+    /// @param bestlast 
+    /// @param bestadded 
+    
+    void firstPage(
+        int &bestlast,
+        std::vector<int> &bestadded);
+
     int newPointsInPage(
         const cPage &page,
         std::vector<int> &added,
@@ -219,7 +233,7 @@ private:
     /// @param[out] bestlast last waypoint in new page
     /// @param[out] bestadded additiona waypoints covered by be page
     /// @return new page
-    
+
     cPage bestAdjacent(
         eMargin margin,
         int prevlast,

@@ -145,29 +145,11 @@ void cMapify::adjacentThenCluster()
     myCovered.clear();
     myCovered.resize(myWayPoints.size(), false);
 
-    // calc offsets from waypoint to paper center
-    // to position the paper so the waypoint is on margin
-
-    // auto voff = pageOffsets();
-
     cPage bestpage;
     int bestlast;
     std::vector<int> bestadded;
 
-    // locate the first page with the first waypoint at the center
-    bestpage.center = myWayPoints[0];
-    for (int i = 0; i < myWayPoints.size(); i++)
-    {
-        if (bestpage.isInside(myWayPoints[i], myPaper))
-        {
-            bestlast = i;
-            bestadded.push_back(i);
-            myCovered[i] = true;
-        }
-    }
-
-    // always add first page
-    myPages.push_back(bestpage);
+    firstPage( bestlast, bestadded );
 
     for (int p = 0;; p++)
     {
@@ -200,11 +182,47 @@ void cMapify::adjacentThenCluster()
     clusterUncovered();
 }
 
+void cMapify::firstPage(
+    int &bestlast,
+    std::vector<int> &bestadded)
+{
+    // locate the first page with the first waypoint at the center
+    cPage page(myWayPoints[0]);
+
+    int outCount = 0;
+    for (int i = 0; i < myWayPoints.size(); i++)
+    {
+        if (page.isInside(myWayPoints[i], myPaper))
+        {
+            outCount = 0;
+            bestlast = i;
+            bestadded.push_back(i);
+            myCovered[i] = true;
+        }
+        else
+        {
+            outCount++;
+            if (outCount > 200) {
+
+                // for circular routes
+                // the first page will cover the first few points
+                // AND the last few points
+                // the last 200 points were uncovered
+                // so we assume we have counted all the first points
+                break;
+            }
+        }
+    }
+
+    // always add first page
+    myPages.push_back(page);
+}
+
 cPage cMapify::bestAdjacent(
     int &bestlast,
     std::vector<int> &bestadded)
 {
-    // std::cout << "bestAdjacent " << myPages.size();
+    std::cout << "bestAdjacent " << myPages.size();
 
     cPage page, bestpage;
     bestadded.clear();
@@ -216,7 +234,7 @@ cPage cMapify::bestAdjacent(
     auto em = exitMargin(
         myWayPoints[bestlast]);
 
-    // std::cout << " exit margin " << (int)em << "\n";
+    std::cout << " exit margin " << (int)em << "\n";
 
     // best page adjacent to exit margin
     page = bestAdjacent(
@@ -288,9 +306,9 @@ cPage cMapify::bestAdjacent(
         int last;
         std::vector<int> added;
         c = newPointsInPage(next.center, added, last);
-        // std::cout << c << " new points for "
-        //           << next.center.x << " " << next.center.y
-        //           << "\n";
+        std::cout << c << " new points for "
+                  << next.center.x << " " << next.center.y
+                  << "\n";
         if (c > cmax)
         {
             cmax = c;
@@ -308,9 +326,9 @@ cPage cMapify::bestAdjacent(
         continue;
 
         c = newPointsInPage(next.center, added, last);
-        // std::cout << c << " new points for rotated "
-        //           << next.center.x << " " << next.center.y
-        //           << "\n";
+        std::cout << c << " new points for rotated "
+                  << next.center.x << " " << next.center.y
+                  << "\n";
         if (c > cmax)
         {
             cmax = c;
@@ -759,8 +777,8 @@ void cMapify::scale()
     myXoff = xmin;
     myYoff = ymin;
 
-    double xscale = 600 / (xmax - xmin);
-    double yscale = 600 / (ymax - ymin);
+    double xscale = 800 / (xmax - xmin);
+    double yscale = 800 / (ymax - ymin);
     myScale = xscale;
     if (yscale < xscale)
         myScale = yscale;
