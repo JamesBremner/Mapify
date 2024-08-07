@@ -189,6 +189,13 @@ private:
     };
     eAlgorithm myAlgorithm;
 
+    enum class eFit
+    {
+        nofit,
+        fit,
+        fitrotated
+    };
+
     double myScale, myXoff, myYoff;
 
     void cluster();
@@ -197,12 +204,12 @@ private:
     bool isMaxPaperDimOK();
     std::vector<cxy> missedWaypoints();
     void clusterMissed(const std::vector<cxy> &missed);
-    bool isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed);
-
+    bool isMaxPaperDimOKPass2(std::vector<cPage> &pagesForMissed);
+    
     /// @brief locate first page
     /// @param bestlast 
     /// @param bestadded 
-    
+
     void firstPage(
         int &bestlast,
         std::vector<int> &bestadded);
@@ -244,6 +251,9 @@ private:
         const cxy &lastPoint) const;
     int uncoveredCount();
     void clusterUncovered();
+    void setKMeansToUncovered();
+
+    eFit clusterFit( int clusterIndex );
 
     /// @brief locate next page
     /// @param page previous page

@@ -149,7 +149,7 @@ void cMapify::adjacentThenCluster()
     int bestlast;
     std::vector<int> bestadded;
 
-    firstPage( bestlast, bestadded );
+    firstPage(bestlast, bestadded);
 
     for (int p = 0;; p++)
     {
@@ -179,7 +179,13 @@ void cMapify::adjacentThenCluster()
             break;
     }
 
+    // Display fit found on terminal
+    std::cout << text();
+
     clusterUncovered();
+
+    // Display fit found on terminal
+    std::cout << text();
 }
 
 void cMapify::firstPage(
@@ -202,7 +208,8 @@ void cMapify::firstPage(
         else
         {
             outCount++;
-            if (outCount > 200) {
+            if (outCount > 200)
+            {
 
                 // for circular routes
                 // the first page will cover the first few points
@@ -306,9 +313,9 @@ cPage cMapify::bestAdjacent(
         int last;
         std::vector<int> added;
         c = newPointsInPage(next.center, added, last);
-        std::cout << c << " new points for "
-                  << next.center.x << " " << next.center.y
-                  << "\n";
+        // std::cout << c << " new points for "
+        //           << next.center.x << " " << next.center.y
+        //           << "\n";
         if (c > cmax)
         {
             cmax = c;
@@ -326,9 +333,9 @@ cPage cMapify::bestAdjacent(
         continue;
 
         c = newPointsInPage(next.center, added, last);
-        std::cout << c << " new points for rotated "
-                  << next.center.x << " " << next.center.y
-                  << "\n";
+        // std::cout << c << " new points for rotated "
+        //           << next.center.x << " " << next.center.y
+        //           << "\n";
         if (c > cmax)
         {
             cmax = c;
@@ -489,52 +496,101 @@ int cMapify::uncoveredCount()
             count++;
     return count;
 }
-void cMapify::clusterUncovered()
-{
-    if (!uncoveredCount())
-    {
-        std::cout << "all waypoints covered\n";
-        return;
-    }
 
-    // add uncovered waypoints to KMeans class instance K
+void cMapify::setKMeansToUncovered()
+{
     K.clearData();
     for (int ip = 0; ip < myWayPoints.size(); ip++)
     {
         if (!myCovered[ip])
             K.Add({myWayPoints[ip].x, myWayPoints[ip].y});
     }
-    // increment number of pages until fit found
-    for (int PageCount = 1; PageCount < 100; PageCount++)
+}
+cMapify::eFit cMapify::clusterFit(int clusterIndex)
+{
+    // calculate cluster width and height
+    double minx, miny, maxx, maxy;
+    minx = miny = INT_MAX;
+    maxx = maxy = -INT_MAX;
+    for (auto p : K.clusters()[clusterIndex].points())
     {
-        // Init KMeans
-        K.Init(PageCount);
+        double x = p->d[0];
+        double y = p->d[1];
+        if (x < minx)
+            minx = x;
+        if (x > maxx)
+            maxx = x;
+        if (y < miny)
+            miny = y;
+        if (y > maxy)
+            maxy = y;
+    }
+
+    // check that cluster fits inside page
+    double w = maxx - minx;
+    double h = maxy - miny;
+    if (w<= myPaper.dim.x &&
+        h <= myPaper.dim.y)
+        return eFit::fit;
+
+    if (w <= myPaper.dim.y &&
+        h <= myPaper.dim.x)
+    {
+        return eFit::fitrotated;
+    }
+    return eFit::nofit;
+}
+void cMapify::clusterUncovered()
+{
+    for (;;)
+    {
+        if (!uncoveredCount())
+        {
+            std::cout << "all waypoints covered\n";
+            return;
+        }
+
+        setKMeansToUncovered();
+
+        // Init KMeans for 3 clusters
+        K.Init(3);
 
         // Run KMeans
         K.Iter(10);
 
-        // check that every cluster fits into one page
-        std::vector<cxy> pagesForMissed;
-        if (!isMaxPaperDimOKPass2(pagesForMissed))
+        // loop over clusters
+        for (int c = 0; c < K.clusters().size(); c++)
         {
-            std::cout << "Cannot fit into " << PageCount << " pages\n";
+            // ignore empty clusters
+            if (K.clusters()[c].points().size() <= 1)
+                continue;
 
-            // continue to increase number of pages
-            continue;
+            eFit fit = clusterFit(c);
+
+            if ( fit == eFit::nofit )
+                continue;
+
+            // place page on cluster
+            myPages.emplace_back(
+                K.clusters()[c].center().d[0],
+                K.clusters()[c].center().d[1]);
+            myPages.back().rotated = ( fit == eFit::fitrotated );
+
+            std::cout << "clustering added page at "
+                      << myPages.back().center.x
+                      << " " << myPages.back().center.y
+                      << "\n";
+
+            // update coverd points
+            std::vector<int> added;
+            int last;
+            newPointsInPage(
+                myPages.back(),
+                added,
+                last);
+            for (int ip : added)
+                myCovered[ip] = true;
         }
-
-        myPages.insert(
-            myPages.end(),
-            pagesForMissed.begin(), pagesForMissed.end());
-
-        std::cout << "Cluster pass added " << pagesForMissed.size()
-                  << ", total pages " << myPages.size()
-                  << "\n";
-
-        // Display fit found on terminal
-        std::cout << text();
-
-        break;
     }
 }
 
@@ -610,44 +666,8 @@ bool cMapify::isMaxPaperDimOK()
 
     return false;
 }
-void cMapify::clusterMissed(const std::vector<cxy> &missed)
-{
-    // missing waypoints to KMeans class instance K
-    K.clearData();
-    for (auto &p : missed)
-    {
-        K.Add({p.x, p.y});
-    }
 
-    std::vector<cxy> pagesForMissed;
-
-    // increment number of pages until fit found
-    for (int PageCount = 1; PageCount < 100; PageCount++)
-    {
-        // Init KMeans
-        K.Init(PageCount);
-
-        // Run KMeans
-        K.Iter(10);
-
-        // check that every cluster fits into one page
-        if (!isMaxPaperDimOKPass2(pagesForMissed))
-        {
-            std::cout << "Cannot fit missing into " << PageCount << " pages\n";
-
-            // continue to increase number of pages
-            continue;
-        }
-
-        // add extra pages to cover missed waypoints
-        myPages.insert(
-            myPages.end(),
-            pagesForMissed.begin(), pagesForMissed.end());
-
-        return;
-    }
-}
-bool cMapify::isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed)
+bool cMapify::isMaxPaperDimOKPass2(std::vector<cPage> &pagesForMissed)
 {
     double minx, miny, maxx, maxy, clusterWidth, clusterHeight;
 
@@ -682,29 +702,36 @@ bool cMapify::isMaxPaperDimOKPass2(std::vector<cxy> &pagesForMissed)
         clusterWidth = maxx - minx;
         clusterHeight = maxy - miny;
 
-        // std::cout << "Page " << c << " min size: "
-        //           << clusterWidth << " " << clusterHeight
-        //           << " range: " << minx << " " << maxx << " " << miny << " " << maxy
-        //           << "\n";
+        std::cout << "Page " << c << " min size: "
+                  << clusterWidth << " " << clusterHeight
+                  << " pts " << K.clusters()[c].points().size()
+                  << " range: " << minx << " " << maxx << " " << miny << " " << maxy
+                  << "\n";
 
-        // If entire cluster will NOT fit inside a single page
-        // abandon this solution
-        if (clusterWidth > myPaper.dim.x ||
-            clusterHeight > myPaper.dim.y)
+        // check that cluster fits inside page
+        if (clusterWidth <= myPaper.dim.x &&
+            clusterHeight <= myPaper.dim.y)
         {
-            return false;
+            // place page on cluster
+            pagesForMissed.emplace_back(
+                (minx + maxx) / 2, (miny + maxy) / 2);
+            continue;
         }
-
-        // place page on cluster
-        // myPageCenters.emplace_back(
-        //     K.clusters()[c].center().d[0],
-        //     K.clusters()[c].center().d[1]);
-        pagesForMissed.emplace_back(
-            (minx + maxx) / 2, (miny + maxy) / 2);
+        if (clusterWidth <= myPaper.dim.y &&
+            clusterHeight <= myPaper.dim.x)
+        {
+            // place page on cluster
+            pagesForMissed.emplace_back(
+                (minx + maxx) / 2, (miny + maxy) / 2);
+            pagesForMissed.back().rotated = true;
+            continue;
+        }
+        return false;
     }
 
     return true;
 }
+
 
 std::vector<cxy> cMapify::missedWaypoints()
 {
