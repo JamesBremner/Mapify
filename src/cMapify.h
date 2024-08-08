@@ -21,33 +21,10 @@ enum class eMargin
     left
 };
 
-class cPaper
-{
-public:
-    cxy dim;
-
-    void set(double width, double height)
-    {
-        dim.x = width;
-        dim.y = height;
-        corners();
-    }
-
-    /// @brief Locate page corners in map co-ords
-    /// @param page
-    /// @return page corners in map co-ords
-
-    // std::vector<cxy> polygon(const cPage &page) const;
-
-private:
-    std::vector<cxy> cornerOffsets;
-
-    void corners();
-};
-
 class cPage
 {
 public:
+    static cxy thePaper;
     cxy center;   // page center location
     bool rotated; // true if page rotated 90o from input paper dimensions
     eMargin em;   // exit margin from previous page
@@ -67,29 +44,33 @@ public:
     {
     }
 
-    cxy topleft(const cPaper &paper) const
+    cxy topleft() const
     {
-        return polygon(paper)[0];
+        return polygon()[0];
     }
-    cxy topright(const cPaper &paper) const
+    cxy topright() const
     {
-        return polygon(paper)[1];
+        return polygon()[1];
     }
-    cxy bottomright(const cPaper &paper) const
+    cxy bottomright() const
     {
-        return polygon(paper)[2];
+        return polygon()[2];
     }
-    cxy bottomleft(const cPaper &paper) const
+    cxy bottomleft() const
     {
-        return polygon(paper)[3];
-    }
-
-    bool isInside(const cxy &p, const cPaper &paper) const
-    {
-        return p.isInside(polygon(paper));
+        return polygon()[3];
     }
 
-    std::vector<cxy> polygon(const cPaper &paper) const;
+    /// @brief Is point covered by page
+    /// @param p point
+    /// @return true if point covered
+
+    bool isInside(const cxy &p) const
+    {
+        return p.isInside(polygon());
+    }
+
+    std::vector<cxy> polygon() const;
 };
 
 class cMapify
@@ -103,11 +84,13 @@ public:
     }
     void paper(double w, double h)
     {
-        myPaper.set(w, h);
+        cPage::thePaper.x = w;
+        cPage::thePaper.y = h;
     }
     void generateRandom();
     void readWaypoints(const std::string &fname);
     void calculate();
+
     void waypointsDisplay(wex::shapes &S);
     void pageDisplay(wex::shapes &S);
     void uncoveredDisplay(wex::shapes &S);
@@ -172,7 +155,6 @@ public:
 private:
     std::vector<cxy> myWayPoints;
     std::vector<bool> myCovered;
-    cPaper myPaper;
     KMeans K;
     std::vector<cPage> myPages;
     enum class eDisplayTab
@@ -205,10 +187,10 @@ private:
     std::vector<cxy> missedWaypoints();
     void clusterMissed(const std::vector<cxy> &missed);
     bool isMaxPaperDimOKPass2(std::vector<cPage> &pagesForMissed);
-    
+
     /// @brief locate first page
-    /// @param bestlast 
-    /// @param bestadded 
+    /// @param bestlast
+    /// @param bestadded
 
     void firstPage(
         int &bestlast,
@@ -218,6 +200,7 @@ private:
         const cPage &page,
         std::vector<int> &added,
         int &last);
+
     cxy bestPageLocation(
         const cxy &wpFirstInPage,
         const std::vector<cxy> &voff,
@@ -253,7 +236,7 @@ private:
     void clusterUncovered();
     void setKMeansToUncovered();
 
-    eFit clusterFit( int clusterIndex );
+    eFit clusterFit(int clusterIndex);
 
     /// @brief locate next page
     /// @param page previous page
