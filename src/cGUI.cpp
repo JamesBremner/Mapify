@@ -4,7 +4,11 @@
 cGUI::cGUI()
     : cStarterGUI(
           "Mapify",
-          {50, 50, 1000, 1000})
+          {50, 50, 1000, 1000}),
+      myScale(1.0 / 200.0),
+      myXoff(350000),
+      myYoff(380000),
+      myDisplayTab(eDisplayTab::viz)
 {
     constructMenus();
     registerEventHandlers();
@@ -28,6 +32,7 @@ void cGUI::constructMenus()
                          return;
                      fm.text("Mapify " + fname);
                      M.readWaypoints(fname);
+                     scale();
                      M.calculate();
                      fm.update();
                  });
@@ -68,7 +73,7 @@ void cGUI::constructMenus()
     mdisplay.append("Visualization",
                     [&](const std::string &title)
                     {
-                        M.DisplayViz();
+                        DisplayViz();
                         mdisplay.check(0);
                         mdisplay.check(1, false);
                         mdisplay.check(2, false);
@@ -77,7 +82,7 @@ void cGUI::constructMenus()
     mdisplay.append("Page Locations",
                     [&](const std::string &title)
                     {
-                        M.DisplayPages();
+                        DisplayPages();
                         mdisplay.check(0, false);
                         mdisplay.check(1);
                         mdisplay.check(2, false);
@@ -86,7 +91,7 @@ void cGUI::constructMenus()
     mdisplay.append("Uncovered",
                     [&](const std::string &title)
                     {
-                        M.DisplayUncovered();
+                        DisplayUncovered();
                         mdisplay.check(0, false);
                         mdisplay.check(1, false);
                         mdisplay.check(2);
@@ -96,25 +101,25 @@ void cGUI::constructMenus()
     mdisplay.append("Pan left",
                     [&](const std::string &title)
                     {
-                        M.panLeft();
+                        panLeft();
                         fm.update();
                     });
     mdisplay.append("Pan right",
                     [&](const std::string &title)
                     {
-                        M.panRight();
+                        panRight();
                         fm.update();
                     });
     mdisplay.append("Pan up",
                     [&](const std::string &title)
                     {
-                        M.panUp();
+                        panUp();
                         fm.update();
                     });
     mdisplay.append("Pan down",
                     [&](const std::string &title)
                     {
-                        M.panDown();
+                        panDown();
                         fm.update();
                     });
     mdisplay.check(0);
@@ -126,9 +131,9 @@ void cGUI::registerEventHandlers()
         [&](PAINTSTRUCT &ps)
         {
             wex::shapes S(ps);
-            M.waypointsDisplay(S);
-            M.pageDisplay(S);
-            M.uncoveredDisplay(S);
+            waypointsDisplay(S);
+            pageDisplay(S);
+            uncoveredDisplay(S);
         });
 
     // handle mouse wheel
@@ -136,9 +141,81 @@ void cGUI::registerEventHandlers()
         [&](int dist)
         {
             if (dist > 0)
-                M.incScale();
+                incScale();
             else
-                M.decScale();
+                decScale();
             fm.update();
         });
+}
+
+
+void cGUI::scale()
+{
+    double xmin, xmax, ymin, ymax;
+    xmax = ymax = 0;
+    xmin = ymin = INT_MAX;
+    for (auto &p : cMapify::theWayPoints)
+    {
+        if (p.x < xmin)
+            xmin = p.x;
+        if (p.y < ymin)
+            ymin = p.y;
+        if (p.x > xmax)
+            xmax = p.x;
+        if (p.y > ymax)
+            ymax = p.y;
+    }
+
+    myXoff = xmin;
+    myYoff = ymin;
+
+    double xscale = 800 / (xmax - xmin);
+    double yscale = 800 / (ymax - ymin);
+    myScale = xscale;
+    if (yscale < xscale)
+        myScale = yscale;
+}
+
+void cGUI::waypointsDisplay(wex::shapes &S)
+{
+    if (!cMapify::theWayPoints.size())
+        return;
+    if (myDisplayTab != eDisplayTab::viz)
+        return;
+
+    S.color(0x0000FF);
+    for (auto &p : cMapify::theWayPoints)
+        S.pixel(
+            myScale * (p.x - myXoff),
+            myScale * (p.y - myYoff));
+}
+void cGUI::uncoveredDisplay(wex::shapes &S)
+{
+    // if (myDisplayTab != eDisplayTab::uncovered)
+    //     return;
+    // S.color(0x0000FF);
+    // for (int ic = 0; ic < myCovered.size(); ic++)
+    //     if (!myCovered[ic])
+    //         S.pixel(
+    //             myScale * (cMapify::theWayPoints[ic].x - myXoff),
+    //             myScale * (cMapify::theWayPoints[ic].y - myYoff));
+}
+void cGUI::pageDisplay(wex::shapes &S)
+{
+    S.color(0);
+
+    if (myDisplayTab == eDisplayTab::viz)
+    {
+        int w = myScale * (cPage::thePaper.x);
+        int h = myScale * (cPage::thePaper.y);
+        for (int c = 0; c < cMapify::thePages.size(); c++)
+            S.rectangle(
+                {(int)(myScale * (cMapify::thePages[c].center.x - myXoff) - w / 2),
+                 (int)(myScale * (cMapify::thePages[c].center.y - myYoff) - h / 2),
+                 w, h});
+    }
+    if (myDisplayTab == eDisplayTab::page)
+    {
+        S.text(M.text(), {10, 10, 1000, 1000});
+    }
 }

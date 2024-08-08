@@ -67,8 +67,62 @@ class cGUI : public cStarterGUI
 public:
     cGUI();
 
+       void incScale()
+    {
+        myScale *= 1.2;
+    }
+    void decScale()
+    {
+        myScale *= 0.8;
+    }
+    void panUp()
+    {
+        myYoff += 0.1 * myYoff;
+    }
+    void panDown()
+    {
+        myYoff -= 0.1 * myYoff;
+    }
+    void panLeft()
+    {
+        myXoff += 0.1 * myXoff;
+    }
+    void panRight()
+    {
+        myXoff -= 0.1 * myXoff;
+    }
+         void DisplayViz()
+    {
+        myDisplayTab = eDisplayTab::viz;
+    }
+    void DisplayPages()
+    {
+        myDisplayTab = eDisplayTab::page;
+    }
+    void DisplayUncovered()
+    {
+        myDisplayTab = eDisplayTab::uncovered;
+    }
+    bool isDisplayPages() const
+    {
+        return myDisplayTab == eDisplayTab::page;
+    }
+
+    void scale();
+    void waypointsDisplay(wex::shapes &S);
+    void uncoveredDisplay(wex::shapes &S);
+    void pageDisplay(wex::shapes &S);
+
 private:
     cMapify M;
+    double myScale, myXoff, myYoff;
+        enum class eDisplayTab
+    {
+        viz,
+        page,
+        uncovered
+    };
+    eDisplayTab myDisplayTab;
 
     void constructMenus();
     void registerEventHandlers();

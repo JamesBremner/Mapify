@@ -77,10 +77,13 @@ class cMapify
 {
 
 public:
+    static std::vector<cxy> theWayPoints;
+    static std::vector<cPage> thePages;
+
     cMapify();
     void addWaypoint(double x, double y)
     {
-        myWayPoints.emplace_back(x, y);
+        theWayPoints.emplace_back(x, y);
     }
     void paper(double w, double h)
     {
@@ -91,51 +94,10 @@ public:
     void readWaypoints(const std::string &fname);
     void calculate();
 
-    void waypointsDisplay(wex::shapes &S);
-    void pageDisplay(wex::shapes &S);
     void uncoveredDisplay(wex::shapes &S);
     std::string text();
 
-    void incScale()
-    {
-        myScale *= 1.2;
-    }
-    void decScale()
-    {
-        myScale *= 0.8;
-    }
-    void panUp()
-    {
-        myYoff += 0.1 * myYoff;
-    }
-    void panDown()
-    {
-        myYoff -= 0.1 * myYoff;
-    }
-    void panLeft()
-    {
-        myXoff += 0.1 * myXoff;
-    }
-    void panRight()
-    {
-        myXoff -= 0.1 * myXoff;
-    }
-    void DisplayViz()
-    {
-        myDisplayTab = eDisplayTab::viz;
-    }
-    void DisplayPages()
-    {
-        myDisplayTab = eDisplayTab::page;
-    }
-    void DisplayUncovered()
-    {
-        myDisplayTab = eDisplayTab::uncovered;
-    }
-    bool isDisplayPages() const
-    {
-        return myDisplayTab == eDisplayTab::page;
-    }
+
     void algoCluster()
     {
         myAlgorithm = eAlgorithm::cluster;
@@ -145,25 +107,17 @@ public:
         myAlgorithm = eAlgorithm::greedy;
     }
 
-    int pageCount()
+    int pageCount() const
     {
-        return myPages.size();
+        return thePages.size();
     }
 
     bool unitTest();
 
 private:
-    std::vector<cxy> myWayPoints;
     std::vector<bool> myCovered;
     KMeans K;
-    std::vector<cPage> myPages;
-    enum class eDisplayTab
-    {
-        viz,
-        page,
-        uncovered
-    };
-    eDisplayTab myDisplayTab;
+
     enum class eAlgorithm
     {
         cluster,
@@ -178,7 +132,7 @@ private:
         fitrotated
     };
 
-    double myScale, myXoff, myYoff;
+
 
     void cluster();
     void greedy();
@@ -249,7 +203,6 @@ private:
         double off,
         eMargin em);
 
-    void scale();
 
     std::vector<cxy> pageOffsets();
 };

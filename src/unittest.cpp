@@ -36,8 +36,8 @@ bool cMapify::unitTest()
             return false;
 
         paper(10, 10);
-        myPages.clear();
-        myPages.emplace_back(10, 10);
+        thePages.clear();
+        thePages.emplace_back(10, 10);
         if (exitMargin(cxy(1, 10)) != eMargin::left)
             return false;
         if (exitMargin(cxy(9, 1)) != eMargin::top)
@@ -46,7 +46,7 @@ bool cMapify::unitTest()
             return false;
         if (exitMargin(cxy(12, 19)) != eMargin::bottom)
             return false;
-        myPages.clear();
+        thePages.clear();
 
         paper(10, 20);
         cPage page(100, 100);
