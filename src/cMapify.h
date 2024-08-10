@@ -27,12 +27,16 @@ public:
     static cxy thePaper;
     cxy center;   // page center location
     bool rotated; // true if page rotated 90o from input paper dimensions
-    eMargin em;   // exit margin from previous page
 
-    cPage() : rotated(false) {}
-    cPage(const cxy &c)
-        : center(c), rotated(false)
+    cPage()
+        : rotated(false),
+          center(6925, 10000)
     {
+    }
+    cPage(const cxy &c)
+        : cPage()
+    {
+        center = c;
     }
 
     /// @brief Construct centered at specified point
@@ -40,8 +44,9 @@ public:
     /// @param height
 
     cPage(double width, double height)
-        : center(width, height), rotated(false)
+        : cPage()
     {
+        center = cxy(width, height);
     }
 
     cxy topleft() const
@@ -97,7 +102,6 @@ public:
     void uncoveredDisplay(wex::shapes &S);
     std::string text();
 
-
     void algoCluster()
     {
         myAlgorithm = eAlgorithm::cluster;
@@ -131,8 +135,6 @@ private:
         fit,
         fitrotated
     };
-
-
 
     void cluster();
     void greedy();
@@ -196,13 +198,14 @@ private:
     /// @param page previous page
     /// @param off fraction of possible location range to apply
     /// @param em prev page margin next page is adjacent to
+    /// @param rotated true if next page is to be rotated
     /// @return next page
 
     cPage nextPageLocate(
         const cPage &page,
         double off,
-        eMargin em);
-
+        eMargin em,
+        bool rotated);
 
     std::vector<cxy> pageOffsets();
 };

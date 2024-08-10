@@ -2,6 +2,7 @@
 
 bool test3()
 {
+        std::cout << "test3\n";
      cMapify m;
      m.paper(10,20);
      m.addWaypoint(10,10 );
@@ -14,20 +15,22 @@ bool test3()
 }
 bool test4()
 {
-    //  cMapify m;
-    //  m.paper(10,20);
-    //  m.addWaypoint(10,10 );
-    //  m.addWaypoint(14,10 );
-    //  m.addWaypoint(16,10 );
-    //  m.addWaypoint(30,10);
-    //  m.calculate();
-    //  if( m.pageCount() != 2 )
-    //     return false;
+        std::cout << "test4\n";
+     cMapify m;
+     m.paper(10,20);
+     m.addWaypoint(5,10 );
+     m.addWaypoint(5,19 );
+     m.addWaypoint(5,25 );
+     m.addWaypoint(15,29);
+     m.calculate();
+     if( m.pageCount() != 2 )
+        return false;
     return true;
 }
 
 bool cMapify::unitTest()
 {
+
     try
     {
         if( ! test4() )
@@ -71,16 +74,14 @@ bool cMapify::unitTest()
         if (poly[3].x != 90 || poly[3].y != 105)
             return false;
 
-        page.rotated = false;
-        cPage next = nextPageLocate(page, 0, eMargin::bottom);
+
+        cPage next = nextPageLocate(page, 0, eMargin::bottom, false);
         if (next.center.x != 90 || next.center.y != 120)
             return false;
-        next = nextPageLocate(page, 0, eMargin::left);
+        next = nextPageLocate(page, 0, eMargin::left,false);
         if (next.center.x != 90 || next.center.y != 60)
             return false;
-
-        page.rotated = true;
-        next = nextPageLocate(page, 0, eMargin::bottom);
+        next = nextPageLocate(page, 0, eMargin::bottom, true);
         if (next.center.x != 80 || next.center.y != 110)
             return false;
 

@@ -1,5 +1,6 @@
 #include "cMapify.h"
 #include "cGUI.h"
+#include <inputbox.h>
 
 cGUI::cGUI()
     : cStarterGUI(
@@ -47,6 +48,22 @@ void cGUI::constructMenus()
                      wex::msgbox("Unit tests passed");
                  });
     mbar.append("File", mfile);
+
+    wex::menu medit(fm);
+    medit.append("Page Size",
+                 [&](const std::string &title)
+                 {
+                     wex::inputbox ib(fm);
+                     ib.add("Width", std::to_string(cPage::thePaper.x));
+                     ib.add("Height", std::to_string(cPage::thePaper.y));
+                     ib.showModal();
+                     cPage::thePaper.x = atoi(ib.value("Width").c_str());
+                     cPage::thePaper.y = atoi(ib.value("Height").c_str());
+                     M.paper(
+                         atoi(ib.value("Width").c_str()),
+                         atoi(ib.value("Height").c_str()));
+                 });
+    mbar.append("Edit", medit);
 
     // static wex::menu malgo(fm);
     // malgo.append("Cluster",
@@ -148,7 +165,6 @@ void cGUI::registerEventHandlers()
         });
 }
 
-
 void cGUI::scale()
 {
     double xmin, xmax, ymin, ymax;
@@ -209,10 +225,19 @@ void cGUI::pageDisplay(wex::shapes &S)
         int w = myScale * (cPage::thePaper.x);
         int h = myScale * (cPage::thePaper.y);
         for (int c = 0; c < cMapify::thePages.size(); c++)
+        {
+            int wp = w;
+            int hp = h;
+            if (cMapify::thePages[c].rotated)
+            {
+                wp = h;
+                hp = w;
+            }
             S.rectangle(
-                {(int)(myScale * (cMapify::thePages[c].center.x - myXoff) - w / 2),
-                 (int)(myScale * (cMapify::thePages[c].center.y - myYoff) - h / 2),
-                 w, h});
+                {(int)(myScale * (cMapify::thePages[c].center.x - myXoff) - wp/2),
+                 (int)(myScale * (cMapify::thePages[c].center.y - myYoff) - hp/2),
+                 wp, hp});
+        }
     }
     if (myDisplayTab == eDisplayTab::page)
     {
