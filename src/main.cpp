@@ -12,6 +12,8 @@ std::vector<cxy> cMapify::theWayPoints;
 cMapify::cMapify()
     : myAlgorithm(eAlgorithm::cluster)
 {
+    thePages.clear();
+    theWayPoints.clear();
 }
 
 void cMapify::generateRandom()
