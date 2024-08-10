@@ -44,17 +44,25 @@ A two-pass algorithm.  First pass maximizes point coverage with no page overlaps
 
 ## GUI
 
+![image](https://github.com/user-attachments/assets/42e69ebd-f72e-4829-ae48-f62bf8fad0c8)
+
 To read a waypoint file select from menu File
 
 To run the unit tests, select from menu file.
+
+![image](https://github.com/user-attachments/assets/ea50b8ac-4d7d-4fb4-bcc5-7eaf83565b4f)
+
+To change page size, select from Edit menu
+
+![image](https://github.com/user-attachments/assets/c2debe35-e337-43a4-b7e5-d4a42204f166)
 
 To display a vizualization of the waypoints ( red dots ) and the page locations ( black rectangles ) select from menu Display
 
 To display page locations ( x,y ) select from menu Display
 
-To zoom vizualization in or out, use the mouse wheel.
-
 To pan vizualization, select from menu Display
+
+To zoom vizualization in or out, use the mouse wheel.
 
 
 ## Results
