@@ -61,3 +61,6 @@ To pan vizualization, select from menu Display
 
 ![image](https://github.com/user-attachments/assets/c823184a-2760-415f-8def-185366005447)
 
+![image](https://github.com/user-attachments/assets/c73a9102-9d93-4351-8e1c-6805efc0f465)
+
+
