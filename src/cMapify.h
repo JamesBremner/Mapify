@@ -25,9 +25,9 @@ class cPage
 {
 public:
     static cxy thePaper;
-    cxy center;   // page center location
-    bool rotated; // true if page rotated 90o from input paper dimensions
-    int lastCovered;
+    cxy center;         // page center location
+    bool rotated;       // true if page rotated 90o from input paper dimensions
+    int lastCovered;    // index of last waypoint covered
 
     cPage()
         : rotated(false),
@@ -146,11 +146,12 @@ private:
     bool isMaxPaperDimOKPass2(std::vector<cPage> &pagesForMissed);
 
     /// @brief locate first page
-    /// @param bestlast
-    /// @param bestadded
 
-    void firstPage(
-        int &bestlast);
+    void firstPage();
+
+    /// @brief  add adjacent pages until end of trail reached
+
+    void addAdjacent();
 
     int newPointsInPage(
         const cPage &page,
@@ -164,13 +165,7 @@ private:
         int &bestlast,
         std::vector<int> &bestadded);
 
-    /// @brief  find best page adjacent to last page
-    /// @param bestlast  the last waypoint covered by last page
-    /// @param bestadded waypoint indices of new points covered by last page
-    /// @return adjacent page
 
-    bool bestAdjacent(
-        int &bestlast);
 
     /// @brief find best page adjacent last along a margin
     /// @param[in] margin margin of prev page

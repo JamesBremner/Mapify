@@ -138,34 +138,33 @@ void cMapify::calculate()
 
 void cMapify::adjacentThenCluster()
 {
+    // check for loaded waypoints
     if (!theWayPoints.size())
         return;
 
-    thePages.clear();
-    myCovered.clear();
-    myCovered.resize(theWayPoints.size(), false);
+    // add first page
+    firstPage();
 
-    int bestlast;
-
-    firstPage(bestlast);
-
-    while (
-        bestAdjacent(
-            bestlast))
-        ;
+    // add adjacent pages until end of trail
+    addAdjacent();
 
     // Display fit found on terminal
     std::cout << text();
 
-    // clusterUncovered();
+    // add pages on missed waypoints
+    clusterUncovered();
 
     // Display fit found on terminal
     std::cout << text();
 }
 
-void cMapify::firstPage(
-    int &bestlast)
+void cMapify::firstPage()
 {
+    // clear previous solution
+    thePages.clear();
+    myCovered.clear();
+    myCovered.resize(theWayPoints.size(), false);
+
     // locate the first page with the first waypoint at the center
     cPage page(theWayPoints[0]);
 
@@ -176,7 +175,6 @@ void cMapify::firstPage(
         {
             outCount = 0;
             page.lastCovered = i;
-            bestlast = i;
             myCovered[i] = true;
         }
         else
@@ -199,83 +197,85 @@ void cMapify::firstPage(
     thePages.push_back(page);
 }
 
-bool cMapify::bestAdjacent(
-    int &bestlast)
+void cMapify::addAdjacent()
 {
     // std::cout << "bestAdjacent " << thePages.size();
 
-    if (bestlast == theWayPoints.size() - 1)
+    while (true)
     {
-        std::cout << "reached end of trail\n";
-        return false;
-    }
-    if (thePages.size() > 300)
-    {
-        std::cout << "too many pages\n";
-        return false;
-    }
-
-    cPage page, bestpage;
-    std::vector<int> bestadded;
-    int last;
-    std::vector<int> added;
-    int prevlast = bestlast;
-
-    // exit margin of last page closest to last waypoint in page
-    auto em = exitMargin(
-        theWayPoints[bestlast]);
-
-    std::cout << " exit margin " << (int)em << "\n";
-
-    // best page adjacent to exit margin
-    bestpage = bestAdjacent(
-        em,
-        prevlast,
-        bestlast,
-        bestadded);
-
-    if (!bestadded.size())
-    {
-        // try other margins
-        bestadded.clear();
-        for (int iem2 = 0; iem2 < 4; iem2++)
+        if (thePages.back().lastCovered == theWayPoints.size() - 1)
         {
-            if (iem2 == (int)em)
-                continue;
+            std::cout << "reached end of trail\n";
+            return;
+        }
+        if (thePages.size() > 300)
+        {
+            std::cout << "too many pages\n";
+            return;
+        }
 
-            page = bestAdjacent(
-                (eMargin)iem2,
-                prevlast,
-                last,
-                added);
+        cPage page, bestpage;
+        std::vector<int> bestadded;
+        int last, bestlast;
+        std::vector<int> added;
+        int prevlast = thePages.back().lastCovered;
 
-            if (added.size() > bestadded.size())
+        // exit margin of last page closest to last waypoint in page
+        auto em = exitMargin(
+            theWayPoints[prevlast]);
+
+        std::cout << " exit margin " << (int)em << "\n";
+
+        // best page adjacent to exit margin
+        bestpage = bestAdjacent(
+            em,
+            prevlast,
+            bestlast,
+            bestadded);
+        bestpage.lastCovered = bestlast;
+
+        if (!bestadded.size())
+        {
+            // try other margins
+            bestadded.clear();
+            for (int iem2 = 0; iem2 < 4; iem2++)
             {
-                bestadded = added;
-                bestlast = last;
-                bestpage = page;
+                if (iem2 == (int)em)
+                    continue;
+
+                page = bestAdjacent(
+                    (eMargin)iem2,
+                    prevlast,
+                    last,
+                    added);
+
+                if (added.size() > bestadded.size())
+                {
+                    bestadded = added;
+                    bestlast = last;
+                    bestpage = page;
+                    bestpage.lastCovered = last;
+                }
             }
         }
-    }
 
-    // check good page found
-    if (!bestadded.size())
-    {
-        std::cout << "did not find new page to add\n";
-        return false;
-    }
-    if (bestpage.center == thePages.back().center)
-    {
-        std::cout << "did not find new page to add\n";
-        return false;
-    }
+        // check good page found
+        if (!bestadded.size())
+        {
+            std::cout << "did not find new page to add\n";
+            return;
+        }
+        if (bestpage.center == thePages.back().center)
+        {
+            std::cout << "did not find new page to add\n";
+            return;
+        }
 
-    // add page
-    thePages.emplace_back(bestpage);
-    for (int i = 0; i < bestadded.size(); i++)
-        myCovered[bestadded[i]] = true;
-
-    return true;
+        // add page
+        thePages.emplace_back(bestpage);
+        for (int i = 0; i < bestadded.size(); i++)
+            myCovered[bestadded[i]] = true;
+    }
 }
 
 cPage cMapify::bestAdjacent(
