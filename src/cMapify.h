@@ -27,10 +27,11 @@ public:
     static cxy thePaper;
     cxy center;   // page center location
     bool rotated; // true if page rotated 90o from input paper dimensions
+    int lastCovered;
 
     cPage()
         : rotated(false),
-          center(6925, 10000)
+          center(-INT_MAX,-INT_MAX)
     {
     }
     cPage(const cxy &c)
@@ -149,8 +150,7 @@ private:
     /// @param bestadded
 
     void firstPage(
-        int &bestlast,
-        std::vector<int> &bestadded);
+        int &bestlast);
 
     int newPointsInPage(
         const cPage &page,
@@ -169,9 +169,8 @@ private:
     /// @param bestadded waypoint indices of new points covered by last page
     /// @return adjacent page
 
-    cPage bestAdjacent(
-        int &bestlast,
-        std::vector<int> &bestadded);
+    bool bestAdjacent(
+        int &bestlast);
 
     /// @brief find best page adjacent last along a margin
     /// @param[in] margin margin of prev page

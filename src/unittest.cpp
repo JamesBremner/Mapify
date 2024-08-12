@@ -1,41 +1,55 @@
 #include "cMapify.h"
 
+bool test1()
+{
+    std::cout << "test1\n";
+    cMapify m;
+    m.paper(6925, 10000);
+    m.readWaypoints("../dat/unittest1.txt");
+    m.calculate();
+    auto result = m.text();
+    if (result.find("7 pages") != 0)
+        return false;
+    return true;
+}
 bool test3()
 {
-        std::cout << "test3\n";
-     cMapify m;
-     m.paper(10,20);
-     m.addWaypoint(10,10 );
-     m.addWaypoint(10,19 );
-     m.addWaypoint(10,30);
-     m.calculate();
-     if( m.pageCount() != 2 )
+    std::cout << "test3\n";
+    cMapify m;
+    m.paper(10, 20);
+    m.addWaypoint(10, 10);
+    m.addWaypoint(10, 19);
+    m.addWaypoint(10, 30);
+    m.calculate();
+    if (m.pageCount() != 2)
         return false;
     return true;
 }
 bool test4()
 {
-        std::cout << "test4\n";
-     cMapify m;
-     m.paper(10,20);
-     m.addWaypoint(5,10 );
-     m.addWaypoint(5,19 );
-     m.addWaypoint(25,25 );
-     m.calculate();
-     if( m.pageCount() != 2 )
+    std::cout << "test4\n";
+    cMapify m;
+    m.paper(10, 20);
+    m.addWaypoint(5, 10);
+    m.addWaypoint(5, 19);
+    m.addWaypoint(25, 25);
+    m.calculate();
+    if (m.pageCount() != 2)
         return false;
     return true;
 }
 
 bool cMapify::unitTest()
 {
-
     try
     {
-        if( ! test4() )
+                if (!test1())
             return false;
-        if( ! test3() )
+        if (!test4())
             return false;
+        if (!test3())
+            return false;
+
 
         paper(10, 10);
         thePages.clear();
@@ -73,7 +87,6 @@ bool cMapify::unitTest()
         if (poly[3].x != 90 || poly[3].y != 105)
             return false;
 
-
         // cPage next = nextPageLocate(page, 0, eMargin::bottom, false);
         // if (next.center.x != 90 || next.center.y != 120)
         //     return false;
@@ -83,19 +96,14 @@ bool cMapify::unitTest()
         // next = nextPageLocate(page, 0, eMargin::bottom, true);
         // if (next.center.x != 80 || next.center.y != 110)
         //     return false;
-
-        cMapify m;
-        m.paper(6925, 10000);
-        m.readWaypoints("../dat/unittest1.txt");
-        m.calculate();
-        auto result = m.text();
-        if (result.find("7 pages") != 0)
-            return false;
     }
     catch (...)
     {
         return false;
     }
+
+    // set paper size back to default
+    paper(6925, 10000);
 
     return true;
 }
